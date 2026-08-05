@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import AuthGate from './components/AuthGate';
+import NavigationChrome from './components/NavigationChrome';
 import SwipeFeed from './components/SwipeFeed';
 import {
   AID_PROJECTS,
@@ -31,6 +32,7 @@ function App() {
   const [feedInitialIndex, setFeedInitialIndex] = useState(0);
   const [feedSessionKey, setFeedSessionKey] = useState(0);
   const [pendingProjectId, setPendingProjectId] = useState(null);
+  const [activePanel, setActivePanel] = useState(null);
 
   const [counter, setCounter] = useState(789118);
   const [balanceUsd, setBalanceUsd] = useState(120);
@@ -151,6 +153,60 @@ function App() {
   const closeFeed = () => {
     setShowFeed(false);
     setFeedInitialIndex(0);
+    setActivePanel(null);
+  };
+
+  const togglePanel = (panel) => {
+    setActivePanel((current) => (current === panel ? null : panel));
+  };
+
+  const handleMapFeedToggle = () => {
+    setActivePanel(null);
+    if (showFeed) {
+      closeFeed();
+      return;
+    }
+    openFeed();
+  };
+
+  const handleReturn = () => {
+    if (activePanel) {
+      setActivePanel(null);
+      return;
+    }
+    if (showFeed) {
+      closeFeed();
+      return;
+    }
+    if (showAuthGate) {
+      setShowAuthGate(false);
+      setPendingProjectId(null);
+      return;
+    }
+    map.current?.flyTo({ center: [20, 30], zoom: 1.5, duration: 900 });
+  };
+
+  const handleLocate = () => {
+    const centerGlobal = () => {
+      map.current?.flyTo({ center: [20, 30], zoom: 1.5, duration: 900 });
+    };
+
+    if (!navigator.geolocation) {
+      centerGlobal();
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        map.current?.flyTo({
+          center: [coords.longitude, coords.latitude],
+          zoom: 9,
+          duration: 1200,
+        });
+      },
+      centerGlobal,
+      { enableHighAccuracy: false, timeout: 5000, maximumAge: 60000 },
+    );
   };
 
   const handleDonate = (projectId) => {
@@ -202,7 +258,7 @@ function App() {
           )}
         </div>
 
-        <div className="pointer-events-auto mx-auto mb-8 flex w-full max-w-md flex-col items-center space-y-4">
+        <div className="pointer-events-auto mx-auto mb-28 flex w-full max-w-md flex-col items-center space-y-4">
           <div className="w-full rounded-3xl border border-slate-700/50 bg-slate-900/80 p-5 text-center shadow-2xl backdrop-blur-md">
             <p className="mb-2 text-xs font-black uppercase tracking-widest text-red-400">
               {featured.story} (21:00)
@@ -268,6 +324,23 @@ function App() {
           onClose={closeFeed}
         />
       ) : null}
+
+      <NavigationChrome
+        mode={showFeed ? 'feed' : 'map'}
+        activePanel={activePanel}
+        userEmail={userEmail}
+        counter={counter}
+        balanceUsd={balanceUsd}
+        savedCount={savedIds.length}
+        onMapFeed={handleMapFeedToggle}
+        onActivity={() => togglePanel('activity')}
+        onPrimary={() => openFeedAt(featured.id)}
+        onProfile={() => togglePanel('profile')}
+        onReturn={handleReturn}
+        onLocate={handleLocate}
+        onSupport={() => togglePanel('support')}
+        onClosePanel={() => setActivePanel(null)}
+      />
     </div>
   );
 }

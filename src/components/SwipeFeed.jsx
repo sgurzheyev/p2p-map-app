@@ -265,7 +265,7 @@ export default function SwipeFeed({
           <span className="text-base text-white/70">↓</span>
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 space-y-4 p-6 pb-8">
+        <div className="absolute inset-x-0 bottom-0 space-y-4 p-6 pb-28">
           <div>
             <p className="text-xs font-black uppercase tracking-widest text-red-400">
               {project.story} · {project.location}
