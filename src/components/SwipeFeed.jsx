@@ -38,12 +38,15 @@ export default function SwipeFeed({
   projects,
   balanceUsd,
   savedIds,
+  initialIndex = 0,
   onSkip,
   onSave,
   onDonate,
   onClose,
 }) {
-  const [index, setIndex] = useState(0);
+  const [index, setIndex] = useState(() =>
+    Math.min(Math.max(initialIndex, 0), Math.max(projects.length - 1, 0)),
+  );
   const [drag, setDrag] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);

@@ -3,7 +3,12 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import AuthGate from './components/AuthGate';
 import SwipeFeed from './components/SwipeFeed';
-import { AID_PROJECTS, DONATION_USD } from './data/projects';
+import {
+  AID_PROJECTS,
+  DONATION_USD,
+  findProjectIndex,
+  projectsToGeoJSON,
+} from './data/projects';
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -16,23 +21,43 @@ const usd = new Intl.NumberFormat('en-US', {
 function App() {
   const mapContainer = useRef(null);
   const map = useRef(null);
+  const openProjectRef = useRef(null);
 
   // Глобальный обзор (карта) и слой вовлечения (лента) разделены
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userEmail, setUserEmail] = useState('');
   const [showFeed, setShowFeed] = useState(false);
   const [showAuthGate, setShowAuthGate] = useState(false);
+  const [feedInitialIndex, setFeedInitialIndex] = useState(0);
+  const [feedSessionKey, setFeedSessionKey] = useState(0);
+  const [pendingProjectId, setPendingProjectId] = useState(null);
 
   const [counter, setCounter] = useState(789118);
   const [balanceUsd, setBalanceUsd] = useState(120);
   const [projects, setProjects] = useState(AID_PROJECTS);
   const [savedIds, setSavedIds] = useState([]);
 
-  const featured = projects[0];
+  const featured = projects[0] ?? AID_PROJECTS[0];
   const featuredProgress = Math.min(
     100,
     Math.round((featured.raisedUsd / featured.goalUsd) * 100),
   );
+
+  const openFeedAt = (projectId = null) => {
+    const targetIndex = findProjectIndex(projects, projectId);
+
+    if (!isAuthenticated) {
+      setPendingProjectId(projectId);
+      setShowAuthGate(true);
+      return;
+    }
+
+    setFeedInitialIndex(targetIndex);
+    setFeedSessionKey((key) => key + 1);
+    setShowFeed(true);
+  };
+
+  openProjectRef.current = openFeedAt;
 
   useEffect(() => {
     if (map.current) return;
@@ -56,15 +81,7 @@ function App() {
 
       map.current.addSource('aid-points', {
         type: 'geojson',
-        data: {
-          type: 'FeatureCollection',
-          features: [
-            { type: 'Feature', geometry: { type: 'Point', coordinates: [37.6173, 55.7558] }, properties: { status: 'red' } },
-            { type: 'Feature', geometry: { type: 'Point', coordinates: [65.5343, 57.1522] }, properties: { status: 'red' } },
-            { type: 'Feature', geometry: { type: 'Point', coordinates: [30.3141, 59.9386] }, properties: { status: 'green' } },
-            { type: 'Feature', geometry: { type: 'Point', coordinates: [104.2806, 52.2978] }, properties: { status: 'green' } },
-          ],
-        },
+        data: projectsToGeoJSON(AID_PROJECTS),
       });
 
       map.current.addLayer({
@@ -84,6 +101,21 @@ function App() {
           'circle-opacity': 0.9,
         },
       });
+
+      // Клик по точке → открыть карточку проекта в ленте
+      map.current.on('click', 'aid-points-layer', (event) => {
+        const projectId = event.features?.[0]?.properties?.projectId;
+        if (!projectId) return;
+        openProjectRef.current?.(projectId);
+      });
+
+      map.current.on('mouseenter', 'aid-points-layer', () => {
+        map.current.getCanvas().style.cursor = 'pointer';
+      });
+
+      map.current.on('mouseleave', 'aid-points-layer', () => {
+        map.current.getCanvas().style.cursor = '';
+      });
     });
 
     return () => {
@@ -94,19 +126,31 @@ function App() {
     };
   }, []);
 
-  const openFeed = () => {
-    if (!isAuthenticated) {
-      setShowAuthGate(true);
-      return;
+  // Синхронизация точек карты с актуальным списком проектов
+  useEffect(() => {
+    const source = map.current?.getSource('aid-points');
+    if (source) {
+      source.setData(projectsToGeoJSON(projects));
     }
-    setShowFeed(true);
-  };
+  }, [projects]);
+
+  const openFeed = () => openFeedAt(null);
 
   const handleAuthenticated = (email) => {
     setUserEmail(email);
     setIsAuthenticated(true);
     setShowAuthGate(false);
+
+    const targetIndex = findProjectIndex(projects, pendingProjectId);
+    setPendingProjectId(null);
+    setFeedInitialIndex(targetIndex);
+    setFeedSessionKey((key) => key + 1);
     setShowFeed(true);
+  };
+
+  const closeFeed = () => {
+    setShowFeed(false);
+    setFeedInitialIndex(0);
   };
 
   const handleDonate = (projectId) => {
@@ -151,7 +195,11 @@ function App() {
             <div className="mt-2 text-[10px] font-bold uppercase tracking-widest text-blue-300">
               {userEmail}
             </div>
-          ) : null}
+          ) : (
+            <div className="mt-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              Нажмите точку на карте, чтобы открыть профиль
+            </div>
+          )}
         </div>
 
         <div className="pointer-events-auto mx-auto mb-8 flex w-full max-w-md flex-col items-center space-y-4">
@@ -200,19 +248,24 @@ function App() {
       {showAuthGate ? (
         <AuthGate
           onAuthenticated={handleAuthenticated}
-          onClose={() => setShowAuthGate(false)}
+          onClose={() => {
+            setShowAuthGate(false);
+            setPendingProjectId(null);
+          }}
         />
       ) : null}
 
       {showFeed && isAuthenticated ? (
         <SwipeFeed
+          key={feedSessionKey}
           projects={projects}
           balanceUsd={balanceUsd}
           savedIds={savedIds}
+          initialIndex={feedInitialIndex}
           onSkip={handleSkip}
           onSave={handleSave}
           onDonate={handleDonate}
-          onClose={() => setShowFeed(false)}
+          onClose={closeFeed}
         />
       ) : null}
     </div>
