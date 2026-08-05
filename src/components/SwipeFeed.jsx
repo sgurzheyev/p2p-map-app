@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { DONATION_USD } from '../data/projects';
+import TrustBadge from './TrustBadge';
 
 const usd = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -279,9 +280,12 @@ export default function SwipeFeed({
             <p className="text-[10px] font-black uppercase tracking-widest text-red-400 sm:text-xs">
               {project.story} · {project.location}
             </p>
-            <h2 className="mt-1.5 bg-gradient-to-r from-white via-white to-slate-100 bg-clip-text text-3xl font-black leading-[1.05] text-transparent drop-shadow-[0_0_18px_rgba(255,255,255,0.9)] sm:text-4xl">
-              {project.title}
-            </h2>
+            <div className="mt-1.5 flex flex-wrap items-end gap-2">
+              <h2 className="min-w-[14rem] flex-1 bg-gradient-to-r from-white via-white to-slate-100 bg-clip-text text-3xl font-black leading-[1.05] text-transparent drop-shadow-[0_0_18px_rgba(255,255,255,0.9)] sm:text-4xl">
+                {project.title}
+              </h2>
+              <TrustBadge tier={project.tier} />
+            </div>
             <div
               className="mt-3 flex flex-wrap gap-2"
               onPointerDown={(event) => event.stopPropagation()}
