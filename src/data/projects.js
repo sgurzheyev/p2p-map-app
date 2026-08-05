@@ -9,7 +9,9 @@ export const AID_PROJECTS = [
     goalUsd: 7000,
     hoursLeft: 21,
     minutesLeft: 18,
-    media: 'from-slate-900 via-red-950 to-slate-950',
+    imageUrl: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1600&q=85',
+    imageAlt: 'Фермерское поле на закате',
+    mediaFallback: 'from-slate-900 via-red-950 to-slate-950',
   },
   {
     id: 'anna-clinic',
@@ -20,7 +22,9 @@ export const AID_PROJECTS = [
     goalUsd: 18000,
     hoursLeft: 8,
     minutesLeft: 42,
-    media: 'from-slate-950 via-blue-950 to-slate-900',
+    imageUrl: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1600&q=85',
+    imageAlt: 'Врач в современной клинике',
+    mediaFallback: 'from-slate-950 via-blue-950 to-slate-900',
   },
   {
     id: 'school-roof',
@@ -31,7 +35,9 @@ export const AID_PROJECTS = [
     goalUsd: 9500,
     hoursLeft: 46,
     minutesLeft: 5,
-    media: 'from-slate-900 via-indigo-950 to-slate-950',
+    imageUrl: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1600&q=85',
+    imageAlt: 'Школьный класс и ученики',
+    mediaFallback: 'from-slate-900 via-indigo-950 to-slate-950',
   },
   {
     id: 'veteran-home',
@@ -42,7 +48,9 @@ export const AID_PROJECTS = [
     goalUsd: 10000,
     hoursLeft: 15,
     minutesLeft: 30,
-    media: 'from-slate-950 via-rose-950 to-slate-900',
+    imageUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=1600&q=85',
+    imageAlt: 'Портрет участника проекта',
+    mediaFallback: 'from-slate-950 via-rose-950 to-slate-900',
   },
 ];
 
