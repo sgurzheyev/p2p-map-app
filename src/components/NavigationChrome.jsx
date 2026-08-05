@@ -71,70 +71,144 @@ function FloatingButton({ icon, label, onClick, primary = false }) {
   );
 }
 
+function formatActivityTime(iso) {
+  try {
+    return new Intl.DateTimeFormat('ru-RU', {
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(iso));
+  } catch {
+    return '';
+  }
+}
+
 function ContextPanel({
   panel,
   onClose,
   balanceUsd,
   savedCount,
   donatedUsd,
+  activityLog = [],
 }) {
   if (!panel || panel === 'profile' || panel === 'create') return null;
 
   return (
-    <div className="pointer-events-auto absolute inset-x-4 bottom-28 z-[36] mx-auto max-w-md rounded-3xl border border-white/15 bg-slate-900/80 p-5 shadow-[0_0_32px_rgba(59,130,246,0.22)] backdrop-blur-md">
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="Закрыть панель"
-        className="absolute right-4 top-4 rounded-full p-2 text-slate-400 transition hover:bg-white/5 hover:text-white"
-      >
-        <Icon name="close" className="h-4 w-4" />
-      </button>
+    <div className="pointer-events-auto absolute inset-x-4 bottom-28 z-[36] mx-auto flex max-h-[min(58vh,28rem)] max-w-md flex-col overflow-hidden rounded-3xl border border-white/15 bg-slate-900/80 shadow-[0_0_32px_rgba(59,130,246,0.22)] backdrop-blur-md">
+      <div className="relative border-b border-white/10 px-5 pb-3 pt-5">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Закрыть панель"
+          className="absolute right-4 top-4 rounded-full p-2 text-slate-400 transition hover:bg-white/5 hover:text-white"
+        >
+          <Icon name="close" className="h-4 w-4" />
+        </button>
 
-      {panel === 'activity' ? (
-        <>
-          <p className="text-[10px] font-black uppercase tracking-widest text-blue-400">
-            Активность
-          </p>
-          <h3 className="mt-2 bg-gradient-to-r from-white via-white to-slate-100 bg-clip-text text-2xl font-black text-transparent drop-shadow-[0_0_14px_rgba(255,255,255,0.7)]">
-            Журнал помощи
-          </h3>
-          <div className="mt-4 space-y-3 text-sm text-slate-300">
-            <div className="flex justify-between border-b border-white/10 pb-3">
-              <span>Пожертвовано в сессии</span>
-              <strong className="text-blue-300">{usd.format(donatedUsd)}</strong>
-            </div>
-            <div className="flex justify-between border-b border-white/10 pb-3">
-              <span>Сохранено проектов</span>
-              <strong className="text-blue-300">{savedCount}</strong>
-            </div>
-            <div className="flex justify-between">
-              <span>Доступно для помощи</span>
-              <strong className="text-white">{usd.format(balanceUsd)}</strong>
-            </div>
-          </div>
-        </>
-      ) : null}
+        {panel === 'activity' ? (
+          <>
+            <p className="text-[10px] font-black uppercase tracking-widest text-blue-400">
+              Активность
+            </p>
+            <h3 className="mt-2 bg-gradient-to-r from-white via-white to-slate-100 bg-clip-text text-2xl font-black text-transparent drop-shadow-[0_0_14px_rgba(255,255,255,0.7)]">
+              Журнал помощи
+            </h3>
+          </>
+        ) : null}
 
-      {panel === 'support' ? (
-        <>
-          <p className="text-[10px] font-black uppercase tracking-widest text-red-400">
-            Поддержка
-          </p>
-          <h3 className="mt-2 bg-gradient-to-r from-white via-white to-slate-100 bg-clip-text text-2xl font-black text-transparent drop-shadow-[0_0_14px_rgba(255,255,255,0.7)]">
-            Мы на связи
-          </h3>
-          <p className="mt-3 text-sm leading-relaxed text-slate-300">
-            Опишите вопрос по переводу или проекту. Канал поддержки защищён и привязан к журналу P2P.
-          </p>
-          <button
-            type="button"
-            className="mt-4 w-full rounded-2xl border border-red-400/60 bg-gradient-to-r from-red-950/50 via-red-600/45 to-red-950/50 py-3 text-xs font-black uppercase tracking-widest text-white shadow-[inset_0_0_16px_rgba(255,255,255,0.16),0_0_24px_rgba(239,68,68,0.55)] backdrop-blur-md"
-          >
-            Начать чат
-          </button>
-        </>
-      ) : null}
+        {panel === 'support' ? (
+          <>
+            <p className="text-[10px] font-black uppercase tracking-widest text-red-400">
+              Поддержка
+            </p>
+            <h3 className="mt-2 bg-gradient-to-r from-white via-white to-slate-100 bg-clip-text text-2xl font-black text-transparent drop-shadow-[0_0_14px_rgba(255,255,255,0.7)]">
+              Мы на связи
+            </h3>
+          </>
+        ) : null}
+      </div>
+
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+        {panel === 'activity' ? (
+          <>
+            <div className="mb-4 grid grid-cols-3 gap-2 text-center">
+              {[
+                ['Баланс', usd.format(balanceUsd)],
+                ['Донаты', usd.format(donatedUsd)],
+                ['Избранное', String(savedCount)],
+              ].map(([label, value]) => (
+                <div
+                  key={label}
+                  className="rounded-2xl border border-blue-500/30 bg-slate-950/45 p-2.5 shadow-[inset_0_0_14px_rgba(59,130,246,0.1)]"
+                >
+                  <div className="bg-gradient-to-r from-white via-white to-slate-200 bg-clip-text text-[11px] font-black text-transparent">
+                    {value}
+                  </div>
+                  <div className="mt-1 text-[7px] font-bold uppercase tracking-wider text-blue-300/90">
+                    {label}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {activityLog.length === 0 ? (
+              <p className="rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-4 text-xs text-slate-400">
+                Пока нет событий. Сохраните проект, отправьте $1 или опубликуйте миссию.
+              </p>
+            ) : (
+              <ul className="space-y-2">
+                {activityLog.map((entry) => (
+                  <li
+                    key={entry.id}
+                    className="rounded-2xl border border-white/10 bg-slate-950/45 px-3 py-3"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-blue-300">
+                          {entry.type === 'donate'
+                            ? 'Донат'
+                            : entry.type === 'save'
+                              ? 'Избранное'
+                              : 'Новая миссия'}
+                        </p>
+                        <p className="mt-1 truncate text-sm font-bold text-white">
+                          {entry.title}
+                        </p>
+                        <p className="mt-0.5 text-[10px] text-slate-400">
+                          {entry.detail}
+                        </p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        {typeof entry.amountUsd === 'number' ? (
+                          <p className="text-sm font-black text-blue-200">
+                            {usd.format(entry.amountUsd)}
+                          </p>
+                        ) : null}
+                        <p className="mt-1 text-[9px] font-bold uppercase tracking-wider text-slate-500">
+                          {formatActivityTime(entry.at)}
+                        </p>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        ) : null}
+
+        {panel === 'support' ? (
+          <>
+            <p className="text-sm leading-relaxed text-slate-300">
+              Опишите вопрос по переводу или проекту. Канал поддержки защищён и привязан к журналу P2P.
+            </p>
+            <button
+              type="button"
+              className="mt-4 w-full rounded-2xl border border-red-400/60 bg-gradient-to-r from-red-950/50 via-red-600/45 to-red-950/50 py-3 text-xs font-black uppercase tracking-widest text-white shadow-[inset_0_0_16px_rgba(255,255,255,0.16),0_0_24px_rgba(239,68,68,0.55)] backdrop-blur-md"
+            >
+              Начать чат
+            </button>
+          </>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -145,6 +219,7 @@ export default function NavigationChrome({
   balanceUsd,
   savedCount,
   donatedUsd,
+  activityLog,
   onMapFeed,
   onActivity,
   onPrimary,
@@ -163,6 +238,7 @@ export default function NavigationChrome({
         balanceUsd={balanceUsd}
         savedCount={savedCount}
         donatedUsd={donatedUsd}
+        activityLog={activityLog}
       />
 
       <div className="pointer-events-auto absolute bottom-4 left-1/2 w-[calc(100%-2rem)] max-w-md -translate-x-1/2">

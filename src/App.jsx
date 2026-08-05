@@ -44,6 +44,7 @@ function App() {
   const [balanceUsd, setBalanceUsd] = useState(INITIAL_BALANCE_USD);
   const [donatedUsd, setDonatedUsd] = useState(0);
   const [donationHistory, setDonationHistory] = useState([]);
+  const [activityLog, setActivityLog] = useState([]);
   const [projects, setProjects] = useState(AID_PROJECTS);
   const [savedIds, setSavedIds] = useState([]);
 
@@ -93,6 +94,19 @@ function App() {
   };
 
   openProjectRef.current = openFeedAt;
+
+  const pushActivity = (entry) => {
+    setActivityLog((log) =>
+      [
+        {
+          id: `${entry.type}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          at: new Date().toISOString(),
+          ...entry,
+        },
+        ...log,
+      ].slice(0, 40),
+    );
+  };
 
   useEffect(() => {
     if (map.current) return;
@@ -236,6 +250,7 @@ function App() {
     setBalanceUsd(INITIAL_BALANCE_USD);
     setDonatedUsd(0);
     setDonationHistory([]);
+    setActivityLog([]);
     setSavedIds([]);
     setProjects(AID_PROJECTS);
   };
@@ -256,6 +271,13 @@ function App() {
     setProjects((list) => [project, ...list]);
     setActivePanel(null);
     setShowFeed(false);
+    pushActivity({
+      type: 'create',
+      title: project.title,
+      detail: `${project.location} · цель ${usd.format(project.goalUsd)}`,
+      amountUsd: project.goalUsd,
+      projectId: project.id,
+    });
 
     map.current?.flyTo({
       center: project.coordinates,
@@ -323,7 +345,7 @@ function App() {
   };
 
   const handleDonate = (projectId) => {
-    if (balanceUsd < DONATION_USD) return;
+    if (balanceUsd < DONATION_USD) return false;
 
     const project =
       projects.find((item) => item.id === projectId) ||
@@ -349,6 +371,14 @@ function App() {
           : item,
       ),
     );
+    pushActivity({
+      type: 'donate',
+      title: project?.title ?? 'Миссия P2P',
+      detail: 'Микро-донат отправлен',
+      amountUsd: DONATION_USD,
+      projectId,
+    });
+    return true;
   };
 
   const handleSkip = (projectId) => {
@@ -359,7 +389,19 @@ function App() {
   };
 
   const handleSave = (projectId) => {
-    setSavedIds((ids) => (ids.includes(projectId) ? ids : [...ids, projectId]));
+    if (savedIds.includes(projectId)) return;
+
+    const project =
+      projects.find((item) => item.id === projectId) ||
+      AID_PROJECTS.find((item) => item.id === projectId);
+
+    setSavedIds((ids) => [...ids, projectId]);
+    pushActivity({
+      type: 'save',
+      title: project?.title ?? 'Миссия P2P',
+      detail: 'Добавлено в избранное',
+      projectId,
+    });
   };
 
   return (
@@ -480,6 +522,7 @@ function App() {
         balanceUsd={balanceUsd}
         savedCount={savedIds.length}
         donatedUsd={donatedUsd}
+        activityLog={activityLog}
         onMapFeed={handleMapFeedToggle}
         onActivity={() => togglePanel('activity')}
         onPrimary={openCreate}

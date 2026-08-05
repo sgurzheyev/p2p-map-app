@@ -54,9 +54,11 @@ export default function SwipeFeed({
   const [transitionDirection, setTransitionDirection] = useState(1);
   const [flash, setFlash] = useState(null);
   const [selectedTags, setSelectedTags] = useState([]);
+  const [donatePulse, setDonatePulse] = useState(false);
   const pointerStart = useRef({ x: 0, y: 0 });
   const transitionTimer = useRef(null);
   const wheelTimer = useRef(null);
+  const donatePulseTimer = useRef(null);
   const wheelLocked = useRef(false);
 
   useEffect(() => {
@@ -69,6 +71,7 @@ export default function SwipeFeed({
     return () => {
       window.clearTimeout(transitionTimer.current);
       window.clearTimeout(wheelTimer.current);
+      window.clearTimeout(donatePulseTimer.current);
     };
   }, []);
 
@@ -127,7 +130,14 @@ export default function SwipeFeed({
 
   const commitDonate = () => {
     if (!project || balanceUsd < DONATION_USD) return;
-    onDonate(project.id);
+    const success = onDonate(project.id);
+    if (success === false) return;
+
+    setDonatePulse(true);
+    window.clearTimeout(donatePulseTimer.current);
+    donatePulseTimer.current = window.setTimeout(() => {
+      setDonatePulse(false);
+    }, 700);
   };
 
   const toggleTag = (tag) => {
@@ -360,7 +370,9 @@ export default function SwipeFeed({
               type="button"
               onClick={commitDonate}
               disabled={balanceUsd < DONATION_USD}
-              className="rounded-3xl border border-red-400/60 bg-gradient-to-r from-red-950/50 via-red-600/45 to-red-950/50 py-3 text-[10px] font-black uppercase tracking-widest text-white shadow-[inset_0_0_16px_rgba(255,255,255,0.16),inset_0_0_28px_rgba(239,68,68,0.35),0_0_28px_rgba(239,68,68,0.7)] backdrop-blur-md transition hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100 sm:py-4 sm:text-xs"
+              className={`rounded-3xl border border-red-400/60 bg-gradient-to-r from-red-950/50 via-red-600/45 to-red-950/50 py-3 text-[10px] font-black uppercase tracking-widest text-white shadow-[inset_0_0_16px_rgba(255,255,255,0.16),inset_0_0_28px_rgba(239,68,68,0.35),0_0_28px_rgba(239,68,68,0.7)] backdrop-blur-md transition hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100 sm:py-4 sm:text-xs ${
+                donatePulse ? 'crystal-success-pulse' : ''
+              }`}
             >
               Помочь {usd.format(DONATION_USD)}
             </button>
