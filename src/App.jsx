@@ -105,7 +105,7 @@ function App() {
 
         {/* Верхняя часть: Живой счетчик */}
         <div className="flex flex-col items-center mt-8">
-          <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-300 drop-shadow-[0_0_15px_rgba(45,212,191,0.8)]">
+          <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-white drop-shadow-[0_0_18px_rgba(255,255,255,0.95)]">
             {peopleHelped.toLocaleString('en-US')}
           </div>
           <div className="text-white text-sm font-bold tracking-widest mt-2 opacity-90 uppercase">
@@ -126,7 +126,7 @@ function App() {
             </div>
             <div className="w-full bg-slate-800 rounded-full h-3 mb-2 overflow-hidden border border-slate-700">
               <div
-                className="bg-gradient-to-r from-teal-400 to-orange-500 h-3 rounded-full relative overflow-hidden transition-[width] duration-500"
+                className="bg-gradient-to-r from-blue-600 via-blue-400 to-cyan-300 h-3 rounded-full relative overflow-hidden shadow-[0_0_14px_rgba(37,99,235,0.85)] transition-[width] duration-500 animate-pulse"
                 style={{ width: `${progress}%` }}
               >
                 <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
@@ -138,7 +138,7 @@ function App() {
           <button 
             onClick={donate}
             disabled={!canDonate}
-            className="w-full bg-gradient-to-r from-teal-500 to-emerald-500 hover:from-teal-400 hover:to-emerald-400 text-white font-black text-2xl py-5 rounded-3xl shadow-[0_0_30px_rgba(16,185,129,0.4)] transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 border border-emerald-400/50 disabled:opacity-40 disabled:shadow-none disabled:hover:scale-100 disabled:cursor-not-allowed"
+            className="w-full bg-gradient-to-r from-red-950/55 via-red-600/45 to-red-950/55 hover:from-red-800/65 hover:via-red-500/60 hover:to-red-800/65 backdrop-blur-md text-white font-black text-2xl py-5 rounded-3xl shadow-[inset_0_0_22px_rgba(255,255,255,0.16),inset_0_0_38px_rgba(255,0,0,0.28),0_0_32px_rgba(255,0,0,0.7)] transition-all transform hover:scale-[1.02] hover:shadow-[inset_0_0_26px_rgba(255,255,255,0.22),inset_0_0_44px_rgba(255,0,0,0.38),0_0_42px_rgba(255,0,0,0.9)] active:scale-95 flex items-center justify-center gap-2 border border-red-300/70 disabled:opacity-40 disabled:shadow-none disabled:hover:scale-100 disabled:cursor-not-allowed"
           >
             ПОМОЧЬ {usd.format(DONATION_USD)}
           </button>
