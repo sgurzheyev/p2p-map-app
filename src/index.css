@@ -1,7 +1,6 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
-/* Mapbox measures its canvas from the parent's computed height, so every
-   ancestor up to <html> needs an explicit height or the map collapses to 0px. */
+/* Явная высота для html/body/#root — иначе Mapbox canvas схлопывается в 0px */
 html,
 body,
 #root {

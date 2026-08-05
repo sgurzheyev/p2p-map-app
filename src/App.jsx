@@ -92,7 +92,7 @@ function App() {
 
         {/* Счетчик: Неоновый белый */}
         <div className="flex flex-col items-center mt-8">
-          <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-slate-300 drop-shadow-[0_0_20px_rgba(255,255,255,0.9)]">
+          <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-slate-100 drop-shadow-[0_0_22px_rgba(255,255,255,0.95)]">
             {counter.toLocaleString('en-US')}
           </div>
           <div className="text-white text-sm font-bold tracking-widest mt-2 opacity-90 uppercase">
@@ -115,7 +115,7 @@ function App() {
             {/* Прогресс-бар: Электрический синий */}
             <div className="w-full bg-slate-800 rounded-full h-3 mb-2 overflow-hidden border border-slate-700">
               <div 
-                className="bg-gradient-to-r from-blue-600 to-indigo-500 h-3 rounded-full relative overflow-hidden transition-all duration-300 shadow-[0_0_10px_rgba(59,130,246,0.6)]"
+                className="bg-gradient-to-r from-blue-600 via-[#3B82F6] to-blue-400 h-3 rounded-full relative overflow-hidden transition-all duration-300 shadow-[0_0_14px_rgba(59,130,246,0.85)] animate-pulse"
                 style={{ width: `${progressPercent}%` }}
               >
                 <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
@@ -128,7 +128,7 @@ function App() {
           <button 
             onClick={handleDonate}
             disabled={balance < 1}
-            className="w-full bg-gradient-to-r from-red-600 to-rose-500 hover:from-red-500 hover:to-rose-400 text-white font-black text-2xl py-5 rounded-3xl shadow-[0_0_35px_rgba(239,68,68,0.6)] transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 border border-red-400/50 cursor-pointer disabled:opacity-50"
+            className="w-full bg-gradient-to-r from-red-950/50 via-red-600/45 to-red-950/50 hover:from-red-900/60 hover:via-red-500/55 hover:to-red-900/60 backdrop-blur-md text-white font-black text-2xl py-5 rounded-3xl shadow-[inset_0_0_20px_rgba(255,255,255,0.18),inset_0_0_36px_rgba(239,68,68,0.35),0_0_34px_rgba(239,68,68,0.75)] hover:shadow-[inset_0_0_24px_rgba(255,255,255,0.22),inset_0_0_42px_rgba(239,68,68,0.45),0_0_44px_rgba(239,68,68,0.9)] transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 border border-red-400/60 cursor-pointer disabled:opacity-40 disabled:shadow-none disabled:hover:scale-100 disabled:cursor-not-allowed"
           >
             ПОМОЧЬ $1
           </button>
