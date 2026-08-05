@@ -52,6 +52,7 @@ export default function SwipeFeed({
   const [isAnimating, setIsAnimating] = useState(false);
   const [transitionDirection, setTransitionDirection] = useState(1);
   const [flash, setFlash] = useState(null);
+  const [selectedTags, setSelectedTags] = useState([]);
   const pointerStart = useRef({ x: 0, y: 0 });
   const transitionTimer = useRef(null);
   const wheelTimer = useRef(null);
@@ -126,6 +127,14 @@ export default function SwipeFeed({
   const commitDonate = () => {
     if (!project || balanceUsd < DONATION_USD) return;
     onDonate(project.id);
+  };
+
+  const toggleTag = (tag) => {
+    setSelectedTags((tags) =>
+      tags.includes(tag)
+        ? tags.filter((selected) => selected !== tag)
+        : [...tags, tag],
+    );
   };
 
   const onPointerDown = (event) => {
@@ -265,17 +274,43 @@ export default function SwipeFeed({
           <span className="text-base text-white/70">↓</span>
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 space-y-4 p-6 pb-28">
+        <div className="absolute inset-x-0 bottom-0 space-y-3 p-5 pb-28 sm:p-6 sm:pb-28">
           <div>
-            <p className="text-xs font-black uppercase tracking-widest text-red-400">
+            <p className="text-[10px] font-black uppercase tracking-widest text-red-400 sm:text-xs">
               {project.story} · {project.location}
             </p>
-            <h2 className="mt-2 text-3xl font-black leading-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-slate-100 drop-shadow-[0_0_18px_rgba(255,255,255,0.9)]">
+            <h2 className="mt-1.5 bg-gradient-to-r from-white via-white to-slate-100 bg-clip-text text-3xl font-black leading-[1.05] text-transparent drop-shadow-[0_0_18px_rgba(255,255,255,0.9)] sm:text-4xl">
               {project.title}
             </h2>
+            <div
+              className="mt-3 flex flex-wrap gap-2"
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              {project.tags.map((tag) => {
+                const isActive = selectedTags.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    aria-pressed={isActive}
+                    onClick={() => toggleTag(tag)}
+                    className={`rounded-full border px-3 py-1.5 text-[9px] font-black tracking-wide backdrop-blur-md transition hover:scale-105 active:scale-95 ${
+                      isActive
+                        ? 'border-blue-300/70 bg-blue-600/35 text-white shadow-[0_0_14px_rgba(59,130,246,0.6)]'
+                        : 'border-white/20 bg-slate-950/45 text-slate-200 hover:border-blue-400/50 hover:text-blue-200'
+                    }`}
+                  >
+                    {tag}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-2 line-clamp-2 max-w-xl text-[12px] leading-relaxed text-slate-200/85 sm:text-[13px]">
+              {project.description}
+            </p>
           </div>
 
-          <div className="rounded-3xl border border-slate-700/50 bg-slate-900/55 p-4 backdrop-blur-md">
+          <div className="rounded-3xl border border-slate-700/50 bg-slate-900/55 p-3.5 backdrop-blur-md sm:p-4">
             <div className="mb-2 flex justify-between text-xs font-bold uppercase tracking-wider text-slate-300">
               <span>Собрано: {usd.format(project.raisedUsd)}</span>
               <span>Цель: {usd.format(project.goalUsd)}</span>
@@ -306,14 +341,14 @@ export default function SwipeFeed({
             <button
               type="button"
               onClick={() => navigate(1)}
-              className="rounded-3xl border border-slate-500/50 bg-slate-950/45 py-4 text-xs font-black uppercase tracking-widest text-white backdrop-blur-md transition hover:scale-[1.02] active:scale-95"
+              className="rounded-3xl border border-slate-500/50 bg-slate-950/45 py-3 text-[10px] font-black uppercase tracking-widest text-white backdrop-blur-md transition hover:scale-[1.02] active:scale-95 sm:py-4 sm:text-xs"
             >
               Далее
             </button>
             <button
               type="button"
               onClick={() => commitHorizontal('save')}
-              className="rounded-3xl border border-blue-400/50 bg-blue-950/35 py-4 text-xs font-black uppercase tracking-widest text-blue-100 shadow-[0_0_18px_rgba(59,130,246,0.35)] backdrop-blur-md transition hover:scale-[1.02] active:scale-95"
+              className="rounded-3xl border border-blue-400/50 bg-blue-950/35 py-3 text-[10px] font-black uppercase tracking-widest text-blue-100 shadow-[0_0_18px_rgba(59,130,246,0.35)] backdrop-blur-md transition hover:scale-[1.02] active:scale-95 sm:py-4 sm:text-xs"
             >
               {isSaved ? 'Сохранено' : 'Избранное'}
             </button>
@@ -321,7 +356,7 @@ export default function SwipeFeed({
               type="button"
               onClick={commitDonate}
               disabled={balanceUsd < DONATION_USD}
-              className="rounded-3xl border border-red-400/60 bg-gradient-to-r from-red-950/50 via-red-600/45 to-red-950/50 py-4 text-xs font-black uppercase tracking-widest text-white shadow-[inset_0_0_16px_rgba(255,255,255,0.16),inset_0_0_28px_rgba(239,68,68,0.35),0_0_28px_rgba(239,68,68,0.7)] backdrop-blur-md transition hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
+              className="rounded-3xl border border-red-400/60 bg-gradient-to-r from-red-950/50 via-red-600/45 to-red-950/50 py-3 text-[10px] font-black uppercase tracking-widest text-white shadow-[inset_0_0_16px_rgba(255,255,255,0.16),inset_0_0_28px_rgba(239,68,68,0.35),0_0_28px_rgba(239,68,68,0.7)] backdrop-blur-md transition hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100 sm:py-4 sm:text-xs"
             >
               Помочь {usd.format(DONATION_USD)}
             </button>

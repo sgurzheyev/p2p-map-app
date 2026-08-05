@@ -239,9 +239,9 @@ function App() {
       <div ref={mapContainer} className="absolute inset-0 h-full w-full" />
 
       {/* HUD карты: глобальный обзор, карта остаётся интерактивной */}
-      <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between p-6">
-        <div className="mt-8 flex flex-col items-center">
-          <div className="bg-gradient-to-r from-white via-white to-slate-100 bg-clip-text text-6xl font-black text-transparent drop-shadow-[0_0_22px_rgba(255,255,255,0.95)]">
+      <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between p-4 sm:p-6">
+        <div className="mt-2 flex flex-col items-center sm:mt-8">
+          <div className="bg-gradient-to-r from-white via-white to-slate-100 bg-clip-text text-4xl font-black text-transparent drop-shadow-[0_0_22px_rgba(255,255,255,0.95)] sm:text-6xl">
             {counter.toLocaleString('en-US')}
           </div>
           <div className="mt-2 text-sm font-bold uppercase tracking-widest text-white opacity-90">
@@ -258,12 +258,12 @@ function App() {
           )}
         </div>
 
-        <div className="pointer-events-auto mx-auto mb-28 flex w-full max-w-md flex-col items-center space-y-4">
-          <div className="w-full rounded-3xl border border-slate-700/50 bg-slate-900/80 p-5 text-center shadow-2xl backdrop-blur-md">
-            <p className="mb-2 text-xs font-black uppercase tracking-widest text-red-400">
+        <div className="pointer-events-auto mx-auto mb-24 flex w-full max-w-md flex-col items-center space-y-3 sm:mb-28">
+          <div className="w-full rounded-3xl border border-slate-700/50 bg-slate-900/80 p-4 text-center shadow-2xl backdrop-blur-md sm:p-5">
+            <p className="mb-1.5 text-[10px] font-black uppercase tracking-widest text-red-400 sm:text-xs">
               {featured.story} (21:00)
             </p>
-            <h3 className="mb-3 text-lg font-bold text-white">{featured.title}</h3>
+            <h3 className="mb-2 text-base font-black text-white sm:text-lg">{featured.title}</h3>
 
             <div className="mb-1 flex justify-between text-xs font-bold uppercase tracking-wider text-slate-400">
               <span>Собрано: {usd.format(featured.raisedUsd)}</span>
@@ -286,7 +286,7 @@ function App() {
           <button
             type="button"
             onClick={openFeed}
-            className="flex w-full transform items-center justify-center gap-2 rounded-3xl border border-red-400/60 bg-gradient-to-r from-red-950/50 via-red-600/45 to-red-950/50 py-5 text-2xl font-black text-white shadow-[inset_0_0_20px_rgba(255,255,255,0.18),inset_0_0_36px_rgba(239,68,68,0.35),0_0_34px_rgba(239,68,68,0.75)] backdrop-blur-md transition-all hover:scale-[1.02] active:scale-95"
+            className="flex w-full transform items-center justify-center gap-2 rounded-3xl border border-red-400/60 bg-gradient-to-r from-red-950/50 via-red-600/45 to-red-950/50 py-4 text-xl font-black text-white shadow-[inset_0_0_20px_rgba(255,255,255,0.18),inset_0_0_36px_rgba(239,68,68,0.35),0_0_34px_rgba(239,68,68,0.75)] backdrop-blur-md transition-all hover:scale-[1.02] active:scale-95 sm:py-5 sm:text-2xl"
           >
             {isAuthenticated ? 'Открыть ленту' : 'Войти и помочь'}
           </button>
