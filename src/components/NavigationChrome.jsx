@@ -205,16 +205,20 @@ export default function NavigationChrome({
       </div>
 
       {mode === 'map' ? (
-        <div className="pointer-events-auto absolute right-4 top-1/2 flex -translate-y-1/2 flex-col gap-3">
-          <FloatingButton icon="locate" label="Моё местоположение" onClick={onLocate} />
-          <FloatingButton
-            icon="beacon"
-            label="Прямая помощь"
-            onClick={onBeacon ?? onPrimary}
-            primary
-          />
-          <FloatingButton icon="chat" label="Поддержка" onClick={onSupport} />
-        </div>
+        <>
+          <div className="pointer-events-auto absolute left-4 top-4 flex flex-row gap-3">
+            <FloatingButton icon="locate" label="Моё местоположение" onClick={onLocate} />
+            <FloatingButton icon="chat" label="Поддержка" onClick={onSupport} />
+          </div>
+          <div className="pointer-events-auto absolute right-4 top-4">
+            <FloatingButton
+              icon="beacon"
+              label="Прямая помощь"
+              onClick={onBeacon ?? onPrimary}
+              primary
+            />
+          </div>
+        </>
       ) : null}
     </div>
   );

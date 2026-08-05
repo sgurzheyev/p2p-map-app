@@ -1,18 +1,11 @@
 import { useMemo, useState } from 'react';
+import { getCategoryByLabel, MISSION_CATEGORIES } from '../data/categories';
 
 const usd = new Intl.NumberFormat('en-US', {
   style: 'currency',
   currency: 'USD',
   maximumFractionDigits: 0,
 });
-
-const CATEGORIES = [
-  'История дня',
-  'Срочный сбор',
-  'Инфраструктура',
-  'Сообщество',
-  'Медицина',
-];
 
 const TIERS = [
   { value: 'green', label: 'Аккредитованный фонд' },
@@ -29,29 +22,6 @@ const CITY_PRESETS = [
   { name: 'Новосибирск', coordinates: [82.9346, 55.0084] },
 ];
 
-const MEDIA_BY_CATEGORY = {
-  'История дня': {
-    imageUrl: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1600&q=85',
-    mediaFallback: 'from-slate-900 via-red-950 to-slate-950',
-  },
-  'Срочный сбор': {
-    imageUrl: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1600&q=85',
-    mediaFallback: 'from-slate-950 via-blue-950 to-slate-900',
-  },
-  'Инфраструктура': {
-    imageUrl: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1600&q=85',
-    mediaFallback: 'from-slate-900 via-indigo-950 to-slate-950',
-  },
-  'Сообщество': {
-    imageUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=1600&q=85',
-    mediaFallback: 'from-slate-950 via-rose-950 to-slate-900',
-  },
-  'Медицина': {
-    imageUrl: 'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=1600&q=85',
-    mediaFallback: 'from-slate-950 via-blue-950 to-slate-900',
-  },
-};
-
 const inputClass =
   'w-full rounded-2xl border border-slate-600/70 bg-slate-950/60 px-4 py-3 text-sm text-white outline-none transition focus:border-blue-500 focus:shadow-[0_0_18px_rgba(59,130,246,0.45)]';
 
@@ -60,8 +30,11 @@ function parseTags(raw) {
     .split(/[\s,]+/)
     .map((tag) => tag.trim())
     .filter(Boolean)
-    .map((tag) => (tag.startsWith('#') ? tag : `#${tag}`))
-    .slice(0, 6);
+    .map((tag) => (tag.startsWith('#') ? tag : `#${tag}`));
+}
+
+function uniqueTags(tags) {
+  return [...new Set(tags)].slice(0, 8);
 }
 
 function Field({ label, children }) {
@@ -77,19 +50,28 @@ function Field({ label, children }) {
 
 /**
  * Модалка создания новой миссии.
- * Добавляет проект в app-state → GeoJSON на глобусе обновляется автоматически.
+ * Категория автоматически подставляет релевантные хэштеги.
  */
 export default function CreateProjectModal({ onSubmit, onClose }) {
+  const defaultCategory = MISSION_CATEGORIES[0];
   const [title, setTitle] = useState('');
   const [location, setLocation] = useState('Москва');
   const [description, setDescription] = useState('');
   const [goalUsd, setGoalUsd] = useState('5000');
-  const [tags, setTags] = useState('#P2PRelief, #DirectSupport');
-  const [category, setCategory] = useState(CATEGORIES[0]);
+  const [category, setCategory] = useState(defaultCategory.label);
+  const [selectedTags, setSelectedTags] = useState(defaultCategory.tags);
+  const [customTags, setCustomTags] = useState('');
   const [tier, setTier] = useState('gray');
   const [lng, setLng] = useState('37.6173');
   const [lat, setLat] = useState('55.7558');
   const [error, setError] = useState('');
+
+  const activeCategory = useMemo(
+    () => getCategoryByLabel(category),
+    [category],
+  );
+
+  const suggestedTags = activeCategory.tags;
 
   const goalPreview = useMemo(() => {
     const value = Number(goalUsd);
@@ -104,6 +86,21 @@ export default function CreateProjectModal({ onSubmit, onClose }) {
     setLat(String(preset.coordinates[1]));
   };
 
+  const handleCategoryChange = (nextCategory) => {
+    setCategory(nextCategory);
+    const config = getCategoryByLabel(nextCategory);
+    setSelectedTags(config.tags);
+    setError('');
+  };
+
+  const toggleSuggestedTag = (tag) => {
+    setSelectedTags((tags) =>
+      tags.includes(tag)
+        ? tags.filter((item) => item !== tag)
+        : [...tags, tag],
+    );
+  };
+
   const handleSubmit = (event) => {
     event.preventDefault();
 
@@ -113,7 +110,10 @@ export default function CreateProjectModal({ onSubmit, onClose }) {
     const nextGoal = Number(goalUsd);
     const nextLng = Number(lng);
     const nextLat = Number(lat);
-    const nextTags = parseTags(tags);
+    const nextTags = uniqueTags([
+      ...selectedTags,
+      ...parseTags(customTags),
+    ]);
 
     if (!nextTitle || !nextLocation || !nextDescription) {
       setError('Заполните название, регион и описание');
@@ -132,8 +132,6 @@ export default function CreateProjectModal({ onSubmit, onClose }) {
       return;
     }
 
-    const media = MEDIA_BY_CATEGORY[category] ?? MEDIA_BY_CATEGORY['Сообщество'];
-
     onSubmit({
       id: `mission-${Date.now()}`,
       title: nextTitle,
@@ -148,9 +146,9 @@ export default function CreateProjectModal({ onSubmit, onClose }) {
       minutesLeft: 0,
       coordinates: [nextLng, nextLat],
       status: 'red',
-      imageUrl: media.imageUrl,
+      imageUrl: activeCategory.imageUrl,
       imageAlt: nextTitle,
-      mediaFallback: media.mediaFallback,
+      mediaFallback: activeCategory.mediaFallback,
     });
   };
 
@@ -241,16 +239,55 @@ export default function CreateProjectModal({ onSubmit, onClose }) {
             <Field label="Категория">
               <select
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                onChange={(e) => handleCategoryChange(e.target.value)}
                 className={inputClass}
               >
-                {CATEGORIES.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
+                {MISSION_CATEGORIES.map((item) => (
+                  <option key={item.id} value={item.label}>
+                    {item.label}
                   </option>
                 ))}
               </select>
             </Field>
+
+            <div>
+              <div className="mb-1.5 flex items-center justify-between gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                  Хэштеги
+                </span>
+                <span className="rounded-full border border-blue-400/45 bg-blue-600/20 px-2.5 py-1 text-[8px] font-black uppercase tracking-wider text-blue-200 shadow-[0_0_12px_rgba(59,130,246,0.35)] backdrop-blur-md">
+                  Близко к вашему выбору
+                </span>
+              </div>
+
+              <div className="mb-2 flex flex-wrap gap-2">
+                {suggestedTags.map((tag) => {
+                  const isActive = selectedTags.includes(tag);
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      aria-pressed={isActive}
+                      onClick={() => toggleSuggestedTag(tag)}
+                      className={`rounded-full border px-3 py-1.5 text-[9px] font-black tracking-wide backdrop-blur-md transition hover:scale-105 active:scale-95 ${
+                        isActive
+                          ? 'border-blue-300/70 bg-blue-600/35 text-white shadow-[0_0_14px_rgba(59,130,246,0.55)]'
+                          : 'border-white/20 bg-slate-950/45 text-slate-300 hover:border-blue-400/45 hover:text-blue-200'
+                      }`}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <input
+                value={customTags}
+                onChange={(e) => setCustomTags(e.target.value)}
+                placeholder="Доп. теги: #MyTag, #LocalAid"
+                className={inputClass}
+              />
+            </div>
 
             <Field label="Уровень верификации">
               <div className="grid grid-cols-1 gap-2">
@@ -288,15 +325,6 @@ export default function CreateProjectModal({ onSubmit, onClose }) {
                 step="1"
                 value={goalUsd}
                 onChange={(e) => setGoalUsd(e.target.value)}
-                className={inputClass}
-              />
-            </Field>
-
-            <Field label="Хэштеги">
-              <input
-                value={tags}
-                onChange={(e) => setTags(e.target.value)}
-                placeholder="#P2PRelief, #CommunityAid"
                 className={inputClass}
               />
             </Field>
