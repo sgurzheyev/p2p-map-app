@@ -1,0 +1,21 @@
+# P2P Beacon Project Rules (.cursorrules)
+
+## 1. Core Architecture & Financials
+- All internal calculations, state management, and base data structures must strictly use **USD**. 
+- Never introduce regional currencies into core business logic or state models. Ruble adaptation is strictly a visual presentation layer feature for future investor demos.
+- Maintain a clean separation between global data discovery (Mapbox 3D Globe) and engagement layers (Swipe Feed).
+
+## 2. Design System & Styling (Neon RU Flag Style)
+- **Tailwind CSS v4** is strictly used. Do not use legacy Tailwind v3 configurations (`content` arrays or old `@tailwind` directives). Use `@import "tailwindcss";` in CSS.
+- **Color Palette:**
+  - **Neon White (`#FFFFFF`):** Primary counters, major stats, and prominent headings. Use intense text gradients with bloom/glow.
+  - **Electric Blue (`#3B82F6` / `bg-blue-600`):** Secondary trackers, progress bars, and structural accents.
+  - **Neon Red (`#EF4444` / `bg-red-600`):** Critical crisis zones on the map and primary platform Calls to Action.
+- **Crystal Buttons:** All primary action buttons must implement a glassmorphism style (`backdrop-blur-md`, translucent base, subtle borders, and heavy inner/outer neon glow).
+
+## 3. Localization & Copy
+- Default UI copy, mock data, and comments should be in Russian unless specified otherwise.
+
+## 4. Code Quality & Performance
+- Always include cleanup logic in React `useEffect` hooks (e.g., `map.remove()`) to prevent WebGL context leaks or memory issues during Vite hot reloads.
+- Ensure all interactive overlays above the Mapbox canvas utilize `pointer-events-none` for wrapper containers and `pointer-events-auto` for active buttons to keep the map fully interactive.
