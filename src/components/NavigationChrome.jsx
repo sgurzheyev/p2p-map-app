@@ -74,12 +74,11 @@ function FloatingButton({ icon, label, onClick, primary = false }) {
 function ContextPanel({
   panel,
   onClose,
-  userEmail,
-  counter,
   balanceUsd,
   savedCount,
+  donatedUsd,
 }) {
-  if (!panel) return null;
+  if (!panel || panel === 'profile') return null;
 
   return (
     <div className="pointer-events-auto absolute inset-x-4 bottom-28 z-[36] mx-auto max-w-md rounded-3xl border border-white/15 bg-slate-900/80 p-5 shadow-[0_0_32px_rgba(59,130,246,0.22)] backdrop-blur-md">
@@ -102,6 +101,10 @@ function ContextPanel({
           </h3>
           <div className="mt-4 space-y-3 text-sm text-slate-300">
             <div className="flex justify-between border-b border-white/10 pb-3">
+              <span>Пожертвовано в сессии</span>
+              <strong className="text-blue-300">{usd.format(donatedUsd)}</strong>
+            </div>
+            <div className="flex justify-between border-b border-white/10 pb-3">
               <span>Сохранено проектов</span>
               <strong className="text-blue-300">{savedCount}</strong>
             </div>
@@ -109,31 +112,6 @@ function ContextPanel({
               <span>Доступно для помощи</span>
               <strong className="text-white">{usd.format(balanceUsd)}</strong>
             </div>
-          </div>
-        </>
-      ) : null}
-
-      {panel === 'profile' ? (
-        <>
-          <p className="text-[10px] font-black uppercase tracking-widest text-blue-400">
-            Профиль
-          </p>
-          <h3 className="mt-2 bg-gradient-to-r from-white via-white to-slate-100 bg-clip-text text-2xl font-black text-transparent drop-shadow-[0_0_14px_rgba(255,255,255,0.7)]">
-            {userEmail || 'Гость P2P Beacon'}
-          </h3>
-          <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-            {[
-              ['Помощь', counter.toLocaleString('en-US')],
-              ['Баланс', usd.format(balanceUsd)],
-              ['Избранное', savedCount],
-            ].map(([label, value]) => (
-              <div key={label} className="rounded-2xl border border-white/10 bg-slate-950/40 p-3">
-                <div className="text-sm font-black text-white">{value}</div>
-                <div className="mt-1 text-[8px] font-bold uppercase tracking-wider text-slate-400">
-                  {label}
-                </div>
-              </div>
-            ))}
           </div>
         </>
       ) : null}
@@ -164,10 +142,9 @@ function ContextPanel({
 export default function NavigationChrome({
   mode,
   activePanel,
-  userEmail,
-  counter,
   balanceUsd,
   savedCount,
+  donatedUsd,
   onMapFeed,
   onActivity,
   onPrimary,
@@ -182,10 +159,9 @@ export default function NavigationChrome({
       <ContextPanel
         panel={activePanel}
         onClose={onClosePanel}
-        userEmail={userEmail}
-        counter={counter}
         balanceUsd={balanceUsd}
         savedCount={savedCount}
+        donatedUsd={donatedUsd}
       />
 
       <div className="pointer-events-auto absolute bottom-4 left-1/2 w-[calc(100%-2rem)] max-w-md -translate-x-1/2">

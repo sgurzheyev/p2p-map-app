@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import AuthGate from './components/AuthGate';
 import NavigationChrome from './components/NavigationChrome';
+import ProfileModal from './components/ProfileModal';
 import SwipeFeed from './components/SwipeFeed';
 import {
   AID_PROJECTS,
@@ -19,6 +20,8 @@ const usd = new Intl.NumberFormat('en-US', {
   maximumFractionDigits: 0,
 });
 
+const INITIAL_BALANCE_USD = 120;
+
 function App() {
   const mapContainer = useRef(null);
   const map = useRef(null);
@@ -32,10 +35,13 @@ function App() {
   const [feedInitialIndex, setFeedInitialIndex] = useState(0);
   const [feedSessionKey, setFeedSessionKey] = useState(0);
   const [pendingProjectId, setPendingProjectId] = useState(null);
+  const [pendingPanel, setPendingPanel] = useState(null);
   const [activePanel, setActivePanel] = useState(null);
 
   const [counter, setCounter] = useState(789118);
-  const [balanceUsd, setBalanceUsd] = useState(120);
+  const [balanceUsd, setBalanceUsd] = useState(INITIAL_BALANCE_USD);
+  const [donatedUsd, setDonatedUsd] = useState(0);
+  const [donationHistory, setDonationHistory] = useState([]);
   const [projects, setProjects] = useState(AID_PROJECTS);
   const [savedIds, setSavedIds] = useState([]);
 
@@ -45,15 +51,40 @@ function App() {
     Math.round((featured.raisedUsd / featured.goalUsd) * 100),
   );
 
+  const savedProjects = useMemo(
+    () =>
+      savedIds
+        .map(
+          (id) =>
+            projects.find((project) => project.id === id) ||
+            AID_PROJECTS.find((project) => project.id === id),
+        )
+        .filter(Boolean),
+    [savedIds, projects],
+  );
+
   const openFeedAt = (projectId = null) => {
-    const targetIndex = findProjectIndex(projects, projectId);
+    let nextProjects = projects;
+
+    // Восстанавливаем проект в ленту, если он был пропущен
+    if (projectId && !projects.some((project) => project.id === projectId)) {
+      const catalog = AID_PROJECTS.find((project) => project.id === projectId);
+      if (catalog) {
+        nextProjects = [catalog, ...projects];
+        setProjects(nextProjects);
+      }
+    }
+
+    const targetIndex = findProjectIndex(nextProjects, projectId);
 
     if (!isAuthenticated) {
       setPendingProjectId(projectId);
+      setPendingPanel(null);
       setShowAuthGate(true);
       return;
     }
 
+    setActivePanel(null);
     setFeedInitialIndex(targetIndex);
     setFeedSessionKey((key) => key + 1);
     setShowFeed(true);
@@ -138,13 +169,31 @@ function App() {
 
   const openFeed = () => openFeedAt(null);
 
+  const openProfile = () => {
+    if (!isAuthenticated) {
+      setPendingPanel('profile');
+      setPendingProjectId(null);
+      setShowAuthGate(true);
+      return;
+    }
+    setActivePanel((current) => (current === 'profile' ? null : 'profile'));
+  };
+
   const handleAuthenticated = (email) => {
     setUserEmail(email);
     setIsAuthenticated(true);
     setShowAuthGate(false);
 
+    if (pendingPanel === 'profile') {
+      setPendingPanel(null);
+      setPendingProjectId(null);
+      setActivePanel('profile');
+      return;
+    }
+
     const targetIndex = findProjectIndex(projects, pendingProjectId);
     setPendingProjectId(null);
+    setPendingPanel(null);
     setFeedInitialIndex(targetIndex);
     setFeedSessionKey((key) => key + 1);
     setShowFeed(true);
@@ -153,10 +202,29 @@ function App() {
   const closeFeed = () => {
     setShowFeed(false);
     setFeedInitialIndex(0);
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setUserEmail('');
+    setShowFeed(false);
+    setShowAuthGate(true);
     setActivePanel(null);
+    setPendingProjectId(null);
+    setPendingPanel(null);
+    setFeedInitialIndex(0);
+    setBalanceUsd(INITIAL_BALANCE_USD);
+    setDonatedUsd(0);
+    setDonationHistory([]);
+    setSavedIds([]);
+    setProjects(AID_PROJECTS);
   };
 
   const togglePanel = (panel) => {
+    if (panel === 'profile') {
+      openProfile();
+      return;
+    }
     setActivePanel((current) => (current === panel ? null : panel));
   };
 
@@ -181,6 +249,7 @@ function App() {
     if (showAuthGate) {
       setShowAuthGate(false);
       setPendingProjectId(null);
+      setPendingPanel(null);
       return;
     }
     map.current?.flyTo({ center: [20, 30], zoom: 1.5, duration: 900 });
@@ -212,13 +281,28 @@ function App() {
   const handleDonate = (projectId) => {
     if (balanceUsd < DONATION_USD) return;
 
+    const project =
+      projects.find((item) => item.id === projectId) ||
+      AID_PROJECTS.find((item) => item.id === projectId);
+
     setBalanceUsd((value) => value - DONATION_USD);
+    setDonatedUsd((value) => value + DONATION_USD);
     setCounter((value) => value + 1);
+    setDonationHistory((history) => [
+      {
+        id: `${projectId}-${Date.now()}`,
+        projectId,
+        title: project?.title ?? 'Миссия P2P',
+        amountUsd: DONATION_USD,
+        at: new Date().toISOString(),
+      },
+      ...history,
+    ].slice(0, 30));
     setProjects((list) =>
-      list.map((project) =>
-        project.id === projectId
-          ? { ...project, raisedUsd: project.raisedUsd + DONATION_USD }
-          : project,
+      list.map((item) =>
+        item.id === projectId
+          ? { ...item, raisedUsd: item.raisedUsd + DONATION_USD }
+          : item,
       ),
     );
   };
@@ -307,6 +391,7 @@ function App() {
           onClose={() => {
             setShowAuthGate(false);
             setPendingProjectId(null);
+            setPendingPanel(null);
           }}
         />
       ) : null}
@@ -325,13 +410,25 @@ function App() {
         />
       ) : null}
 
+      {activePanel === 'profile' && isAuthenticated ? (
+        <ProfileModal
+          userEmail={userEmail}
+          balanceUsd={balanceUsd}
+          donatedUsd={donatedUsd}
+          savedProjects={savedProjects}
+          donationHistory={donationHistory}
+          onOpenProject={(projectId) => openFeedAt(projectId)}
+          onLogout={handleLogout}
+          onClose={() => setActivePanel(null)}
+        />
+      ) : null}
+
       <NavigationChrome
         mode={showFeed ? 'feed' : 'map'}
         activePanel={activePanel}
-        userEmail={userEmail}
-        counter={counter}
         balanceUsd={balanceUsd}
         savedCount={savedIds.length}
+        donatedUsd={donatedUsd}
         onMapFeed={handleMapFeedToggle}
         onActivity={() => togglePanel('activity')}
         onPrimary={() => openFeedAt(featured.id)}
