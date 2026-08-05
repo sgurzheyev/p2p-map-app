@@ -1,17 +1,38 @@
 import { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import AuthGate from './components/AuthGate';
+import SwipeFeed from './components/SwipeFeed';
+import { AID_PROJECTS, DONATION_USD } from './data/projects';
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
+
+const usd = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  maximumFractionDigits: 0,
+});
 
 function App() {
   const mapContainer = useRef(null);
   const map = useRef(null);
-  
+
+  // Глобальный обзор (карта) и слой вовлечения (лента) разделены
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
+  const [showFeed, setShowFeed] = useState(false);
+  const [showAuthGate, setShowAuthGate] = useState(false);
+
   const [counter, setCounter] = useState(789118);
-  const [balance, setBalance] = useState(120);
-  const [raised, setRaised] = useState(5950);
-  const goal = 7000;
+  const [balanceUsd, setBalanceUsd] = useState(120);
+  const [projects, setProjects] = useState(AID_PROJECTS);
+  const [savedIds, setSavedIds] = useState([]);
+
+  const featured = projects[0];
+  const featuredProgress = Math.min(
+    100,
+    Math.round((featured.raisedUsd / featured.goalUsd) * 100),
+  );
 
   useEffect(() => {
     if (map.current) return;
@@ -21,16 +42,16 @@ function App() {
       style: 'mapbox://styles/mapbox/dark-v11',
       center: [20, 30],
       zoom: 1.5,
-      projection: 'globe'
+      projection: 'globe',
     });
 
     map.current.on('style.load', () => {
       map.current.setFog({
         color: 'rgb(20, 24, 34)',
-        'high-color': 'rgb(36, 43, 54)', 
-        'horizon-blend': 0.02, 
-        'space-color': 'rgb(11, 11, 15)', 
-        'star-intensity': 0.6 
+        'high-color': 'rgb(36, 43, 54)',
+        'horizon-blend': 0.02,
+        'space-color': 'rgb(11, 11, 15)',
+        'star-intensity': 0.6,
       });
 
       map.current.addSource('aid-points', {
@@ -41,9 +62,9 @@ function App() {
             { type: 'Feature', geometry: { type: 'Point', coordinates: [37.6173, 55.7558] }, properties: { status: 'red' } },
             { type: 'Feature', geometry: { type: 'Point', coordinates: [65.5343, 57.1522] }, properties: { status: 'red' } },
             { type: 'Feature', geometry: { type: 'Point', coordinates: [30.3141, 59.9386] }, properties: { status: 'green' } },
-            { type: 'Feature', geometry: { type: 'Point', coordinates: [104.2806, 52.2978] }, properties: { status: 'green' } }
-          ]
-        }
+            { type: 'Feature', geometry: { type: 'Point', coordinates: [104.2806, 52.2978] }, properties: { status: 'green' } },
+          ],
+        },
       });
 
       map.current.addLayer({
@@ -57,11 +78,11 @@ function App() {
             ['get', 'status'],
             'red', '#ef4444',
             'green', '#10b981',
-            '#ffffff'
+            '#ffffff',
           ],
           'circle-blur': 0.4,
-          'circle-opacity': 0.9
-        }
+          'circle-opacity': 0.9,
+        },
       });
     });
 
@@ -73,76 +94,127 @@ function App() {
     };
   }, []);
 
-  const handleDonate = () => {
-    if (balance >= 1) {
-      setBalance(b => b - 1);
-      setRaised(r => r + 1);
-      setCounter(c => c + 1);
+  const openFeed = () => {
+    if (!isAuthenticated) {
+      setShowAuthGate(true);
+      return;
     }
+    setShowFeed(true);
   };
 
-  const progressPercent = Math.min(100, Math.round((raised / goal) * 100));
+  const handleAuthenticated = (email) => {
+    setUserEmail(email);
+    setIsAuthenticated(true);
+    setShowAuthGate(false);
+    setShowFeed(true);
+  };
+
+  const handleDonate = (projectId) => {
+    if (balanceUsd < DONATION_USD) return;
+
+    setBalanceUsd((value) => value - DONATION_USD);
+    setCounter((value) => value + 1);
+    setProjects((list) =>
+      list.map((project) =>
+        project.id === projectId
+          ? { ...project, raisedUsd: project.raisedUsd + DONATION_USD }
+          : project,
+      ),
+    );
+  };
+
+  const handleSkip = (projectId) => {
+    setProjects((list) => {
+      if (list.length <= 1) return list;
+      return list.filter((project) => project.id !== projectId);
+    });
+  };
+
+  const handleSave = (projectId) => {
+    setSavedIds((ids) => (ids.includes(projectId) ? ids : [...ids, projectId]));
+  };
 
   return (
-    <div className="relative w-screen h-screen bg-slate-900 overflow-hidden font-sans">
-      
-      <div ref={mapContainer} className="absolute inset-0 w-full h-full" />
+    <div className="relative h-screen w-screen overflow-hidden bg-slate-900 font-sans">
+      <div ref={mapContainer} className="absolute inset-0 h-full w-full" />
 
-      <div className="absolute inset-0 pointer-events-none flex flex-col justify-between p-6 z-10">
-
-        {/* Счетчик: Неоновый белый */}
-        <div className="flex flex-col items-center mt-8">
-          <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-slate-100 drop-shadow-[0_0_22px_rgba(255,255,255,0.95)]">
+      {/* HUD карты: глобальный обзор, карта остаётся интерактивной */}
+      <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between p-6">
+        <div className="mt-8 flex flex-col items-center">
+          <div className="bg-gradient-to-r from-white via-white to-slate-100 bg-clip-text text-6xl font-black text-transparent drop-shadow-[0_0_22px_rgba(255,255,255,0.95)]">
             {counter.toLocaleString('en-US')}
           </div>
-          <div className="text-white text-sm font-bold tracking-widest mt-2 opacity-90 uppercase">
+          <div className="mt-2 text-sm font-bold uppercase tracking-widest text-white opacity-90">
             Людей уже помогли
           </div>
+          {isAuthenticated ? (
+            <div className="mt-2 text-[10px] font-bold uppercase tracking-widest text-blue-300">
+              {userEmail}
+            </div>
+          ) : null}
         </div>
 
-        {/* Нижний блок */}
-        <div className="flex flex-col items-center mb-8 pointer-events-auto w-full max-w-md mx-auto space-y-4">
-          
-          <div className="bg-slate-900/80 backdrop-blur-md border border-slate-700/50 p-5 rounded-3xl w-full text-center shadow-2xl">
-            <p className="text-red-400 text-xs font-black uppercase tracking-widest mb-2">История дня (21:00)</p>
-            <h3 className="text-white text-lg font-bold mb-3">Помочь Коле восстановить ферму</h3>
-            
-            <div className="flex justify-between text-xs text-slate-400 font-bold mb-1 uppercase tracking-wider">
-              <span>Собрано: ${raised.toLocaleString('en-US')}</span>
-              <span>Цель: ${goal.toLocaleString('en-US')}</span>
+        <div className="pointer-events-auto mx-auto mb-8 flex w-full max-w-md flex-col items-center space-y-4">
+          <div className="w-full rounded-3xl border border-slate-700/50 bg-slate-900/80 p-5 text-center shadow-2xl backdrop-blur-md">
+            <p className="mb-2 text-xs font-black uppercase tracking-widest text-red-400">
+              {featured.story} (21:00)
+            </p>
+            <h3 className="mb-3 text-lg font-bold text-white">{featured.title}</h3>
+
+            <div className="mb-1 flex justify-between text-xs font-bold uppercase tracking-wider text-slate-400">
+              <span>Собрано: {usd.format(featured.raisedUsd)}</span>
+              <span>Цель: {usd.format(featured.goalUsd)}</span>
             </div>
-            
-            {/* Прогресс-бар: Электрический синий */}
-            <div className="w-full bg-slate-800 rounded-full h-3 mb-2 overflow-hidden border border-slate-700">
-              <div 
-                className="bg-gradient-to-r from-blue-600 via-[#3B82F6] to-blue-400 h-3 rounded-full relative overflow-hidden transition-all duration-300 shadow-[0_0_14px_rgba(59,130,246,0.85)] animate-pulse"
-                style={{ width: `${progressPercent}%` }}
+
+            <div className="mb-2 h-3 w-full overflow-hidden rounded-full border border-slate-700 bg-slate-800">
+              <div
+                className="relative h-3 overflow-hidden rounded-full bg-gradient-to-r from-blue-600 via-[#3B82F6] to-blue-400 shadow-[0_0_14px_rgba(59,130,246,0.85)] animate-pulse transition-all duration-300"
+                style={{ width: `${featuredProgress}%` }}
               >
-                <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                <div className="absolute inset-0 animate-pulse bg-white/20" />
               </div>
             </div>
-            <p className="text-blue-400 text-xs font-bold uppercase tracking-widest">Осталось: 21 час 18 минут</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-blue-400">
+              Осталось: {featured.hoursLeft} час {featured.minutesLeft} минут
+            </p>
           </div>
 
-          {/* Кнопка: Неоновый красный кристал */}
-          <button 
-            onClick={handleDonate}
-            disabled={balance < 1}
-            className="w-full bg-gradient-to-r from-red-950/50 via-red-600/45 to-red-950/50 hover:from-red-900/60 hover:via-red-500/55 hover:to-red-900/60 backdrop-blur-md text-white font-black text-2xl py-5 rounded-3xl shadow-[inset_0_0_20px_rgba(255,255,255,0.18),inset_0_0_36px_rgba(239,68,68,0.35),0_0_34px_rgba(239,68,68,0.75)] hover:shadow-[inset_0_0_24px_rgba(255,255,255,0.22),inset_0_0_42px_rgba(239,68,68,0.45),0_0_44px_rgba(239,68,68,0.9)] transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-2 border border-red-400/60 cursor-pointer disabled:opacity-40 disabled:shadow-none disabled:hover:scale-100 disabled:cursor-not-allowed"
+          <button
+            type="button"
+            onClick={openFeed}
+            className="flex w-full transform items-center justify-center gap-2 rounded-3xl border border-red-400/60 bg-gradient-to-r from-red-950/50 via-red-600/45 to-red-950/50 py-5 text-2xl font-black text-white shadow-[inset_0_0_20px_rgba(255,255,255,0.18),inset_0_0_36px_rgba(239,68,68,0.35),0_0_34px_rgba(239,68,68,0.75)] backdrop-blur-md transition-all hover:scale-[1.02] active:scale-95"
           >
-            ПОМОЧЬ $1
+            {isAuthenticated ? 'Открыть ленту' : 'Войти и помочь'}
           </button>
 
-          <div className="flex justify-between w-full px-2 text-[10px] text-slate-400 uppercase tracking-widest font-bold">
-            <span>Баланс: ${balance}</span>
+          <div className="flex w-full justify-between px-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+            <span>Баланс: {usd.format(balanceUsd)}</span>
             <span className="flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+              <span className="h-2 w-2 animate-pulse rounded-full bg-red-500" />
               Полная прозрачность P2P
             </span>
           </div>
         </div>
-
       </div>
+
+      {showAuthGate ? (
+        <AuthGate
+          onAuthenticated={handleAuthenticated}
+          onClose={() => setShowAuthGate(false)}
+        />
+      ) : null}
+
+      {showFeed && isAuthenticated ? (
+        <SwipeFeed
+          projects={projects}
+          balanceUsd={balanceUsd}
+          savedIds={savedIds}
+          onSkip={handleSkip}
+          onSave={handleSave}
+          onDonate={handleDonate}
+          onClose={() => setShowFeed(false)}
+        />
+      ) : null}
     </div>
   );
 }
