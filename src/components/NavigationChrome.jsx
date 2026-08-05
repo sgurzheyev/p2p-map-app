@@ -78,7 +78,7 @@ function ContextPanel({
   savedCount,
   donatedUsd,
 }) {
-  if (!panel || panel === 'profile') return null;
+  if (!panel || panel === 'profile' || panel === 'create') return null;
 
   return (
     <div className="pointer-events-auto absolute inset-x-4 bottom-28 z-[36] mx-auto max-w-md rounded-3xl border border-white/15 bg-slate-900/80 p-5 shadow-[0_0_32px_rgba(59,130,246,0.22)] backdrop-blur-md">
@@ -148,6 +148,7 @@ export default function NavigationChrome({
   onMapFeed,
   onActivity,
   onPrimary,
+  onBeacon,
   onProfile,
   onReturn,
   onLocate,
@@ -181,8 +182,10 @@ export default function NavigationChrome({
           <button
             type="button"
             onClick={onPrimary}
-            aria-label="Главное действие"
-            className="-mt-7 flex h-16 w-16 items-center justify-center rounded-full border border-red-300/70 bg-gradient-to-br from-red-950/60 via-red-600/55 to-red-950/60 text-white shadow-[inset_0_0_18px_rgba(255,255,255,0.2),inset_0_0_30px_rgba(239,68,68,0.4),0_0_34px_rgba(239,68,68,0.85)] backdrop-blur-md transition hover:scale-105 active:scale-95"
+            aria-label="Создать миссию"
+            className={`-mt-7 flex h-16 w-16 items-center justify-center rounded-full border border-red-300/70 bg-gradient-to-br from-red-950/60 via-red-600/55 to-red-950/60 text-white shadow-[inset_0_0_18px_rgba(255,255,255,0.2),inset_0_0_30px_rgba(239,68,68,0.4),0_0_34px_rgba(239,68,68,0.85)] backdrop-blur-md transition hover:scale-105 active:scale-95 ${
+              activePanel === 'create' ? 'ring-2 ring-blue-400/70' : ''
+            }`}
           >
             <Icon name="plus" className="h-7 w-7" />
           </button>
@@ -204,7 +207,12 @@ export default function NavigationChrome({
       {mode === 'map' ? (
         <div className="pointer-events-auto absolute right-4 top-1/2 flex -translate-y-1/2 flex-col gap-3">
           <FloatingButton icon="locate" label="Моё местоположение" onClick={onLocate} />
-          <FloatingButton icon="beacon" label="Прямая помощь" onClick={onPrimary} primary />
+          <FloatingButton
+            icon="beacon"
+            label="Прямая помощь"
+            onClick={onBeacon ?? onPrimary}
+            primary
+          />
           <FloatingButton icon="chat" label="Поддержка" onClick={onSupport} />
         </div>
       ) : null}

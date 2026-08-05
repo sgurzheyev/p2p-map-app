@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import AuthGate from './components/AuthGate';
+import CreateProjectModal from './components/CreateProjectModal';
 import NavigationChrome from './components/NavigationChrome';
 import ProfileModal from './components/ProfileModal';
 import SwipeFeed from './components/SwipeFeed';
@@ -26,6 +27,7 @@ function App() {
   const mapContainer = useRef(null);
   const map = useRef(null);
   const openProjectRef = useRef(null);
+  const createRevealTimer = useRef(null);
 
   // Глобальный обзор (карта) и слой вовлечения (лента) разделены
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -152,6 +154,7 @@ function App() {
     });
 
     return () => {
+      window.clearTimeout(createRevealTimer.current);
       if (map.current) {
         map.current.remove();
         map.current = null;
@@ -179,6 +182,16 @@ function App() {
     setActivePanel((current) => (current === 'profile' ? null : 'profile'));
   };
 
+  const openCreate = () => {
+    if (!isAuthenticated) {
+      setPendingPanel('create');
+      setPendingProjectId(null);
+      setShowAuthGate(true);
+      return;
+    }
+    setActivePanel((current) => (current === 'create' ? null : 'create'));
+  };
+
   const handleAuthenticated = (email) => {
     setUserEmail(email);
     setIsAuthenticated(true);
@@ -188,6 +201,13 @@ function App() {
       setPendingPanel(null);
       setPendingProjectId(null);
       setActivePanel('profile');
+      return;
+    }
+
+    if (pendingPanel === 'create') {
+      setPendingPanel(null);
+      setPendingProjectId(null);
+      setActivePanel('create');
       return;
     }
 
@@ -225,7 +245,31 @@ function App() {
       openProfile();
       return;
     }
+    if (panel === 'create') {
+      openCreate();
+      return;
+    }
     setActivePanel((current) => (current === panel ? null : panel));
+  };
+
+  const handleCreateProject = (project) => {
+    setProjects((list) => [project, ...list]);
+    setActivePanel(null);
+    setShowFeed(false);
+
+    map.current?.flyTo({
+      center: project.coordinates,
+      zoom: 5.5,
+      duration: 1200,
+    });
+
+    // Сразу открываем карточку новой миссии в ленте
+    window.clearTimeout(createRevealTimer.current);
+    createRevealTimer.current = window.setTimeout(() => {
+      setFeedInitialIndex(0);
+      setFeedSessionKey((key) => key + 1);
+      setShowFeed(true);
+    }, 700);
   };
 
   const handleMapFeedToggle = () => {
@@ -423,6 +467,13 @@ function App() {
         />
       ) : null}
 
+      {activePanel === 'create' && isAuthenticated ? (
+        <CreateProjectModal
+          onSubmit={handleCreateProject}
+          onClose={() => setActivePanel(null)}
+        />
+      ) : null}
+
       <NavigationChrome
         mode={showFeed ? 'feed' : 'map'}
         activePanel={activePanel}
@@ -431,7 +482,8 @@ function App() {
         donatedUsd={donatedUsd}
         onMapFeed={handleMapFeedToggle}
         onActivity={() => togglePanel('activity')}
-        onPrimary={() => openFeedAt(featured.id)}
+        onPrimary={openCreate}
+        onBeacon={() => openFeedAt(featured.id)}
         onProfile={() => togglePanel('profile')}
         onReturn={handleReturn}
         onLocate={handleLocate}
