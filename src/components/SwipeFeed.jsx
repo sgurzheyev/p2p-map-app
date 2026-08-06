@@ -48,7 +48,7 @@ function FilterBanner({ activeFilter, searchQuery, count, onReset }) {
       className="pointer-events-auto flex flex-wrap items-center gap-2 rounded-2xl border border-blue-400/40 bg-slate-950/55 px-3 py-2 shadow-[0_0_18px_rgba(59,130,246,0.28)] backdrop-blur-md"
       onPointerDown={(event) => event.stopPropagation()}
     >
-      <p className="min-w-0 flex-1 text-[10px] font-bold uppercase tracking-wider text-blue-100">
+      <p className="min-w-0 flex-1 truncate text-[10px] font-bold uppercase tracking-wider text-blue-100">
         Найдено: {count}
         {filterLabel ? ` · ${filterLabel}` : ''}
         {searchQuery.trim() ? ` · «${searchQuery.trim()}»` : ''}
@@ -326,22 +326,22 @@ export default function SwipeFeed({
         )}
 
         <div
-          className="absolute inset-x-0 top-0 space-y-2 p-5"
+          className="absolute inset-x-0 top-0 space-y-2 p-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:p-5"
           onPointerDown={(event) => event.stopPropagation()}
         >
           <div className="flex items-center justify-between gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full border border-white/20 bg-slate-950/40 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-white backdrop-blur-md"
+              className="shrink-0 rounded-full border border-white/20 bg-slate-950/40 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-white backdrop-blur-md sm:px-4"
             >
               Карта
             </button>
-            <div className="text-[10px] font-bold uppercase tracking-widest text-slate-300">
+            <div className="min-w-0 truncate text-center text-[10px] font-bold uppercase tracking-widest text-slate-300">
               {index + 1} / {projects.length}
             </div>
-            <div className="text-[10px] font-bold uppercase tracking-widest text-white">
-              Баланс: {usd.format(balanceUsd)}
+            <div className="shrink-0 text-[10px] font-bold uppercase tracking-widest text-white">
+              {usd.format(balanceUsd)}
             </div>
           </div>
 
@@ -349,7 +349,7 @@ export default function SwipeFeed({
             <DiscoverySearch
               value={searchQuery}
               onChange={onSearchChange}
-              className="max-w-md"
+              className="w-full max-w-md"
             />
           ) : null}
 
@@ -361,7 +361,7 @@ export default function SwipeFeed({
           />
         </div>
 
-        <div className="pointer-events-none absolute right-5 top-1/2 flex -translate-y-1/2 flex-col items-center gap-2">
+        <div className="pointer-events-none absolute right-3 top-1/2 hidden -translate-y-1/2 flex-col items-center gap-2 sm:right-5 sm:flex">
           <span className="text-base text-white/70">↑</span>
           <span className="text-[8px] font-bold uppercase tracking-[0.2em] text-white/55 [writing-mode:vertical-rl]">
             Листайте
@@ -369,7 +369,7 @@ export default function SwipeFeed({
           <span className="text-base text-white/70">↓</span>
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 space-y-3 p-5 pb-28 sm:p-6 sm:pb-28">
+        <div className="absolute inset-x-0 bottom-0 space-y-3 p-3 pb-28 sm:space-y-3 sm:p-6 sm:pb-28">
           <div>
             <div
               className="flex flex-wrap items-center gap-2"
@@ -379,7 +379,7 @@ export default function SwipeFeed({
                 type="button"
                 onClick={() => applyCategoryFilter(project.story)}
                 aria-pressed={categoryActive}
-                className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-widest backdrop-blur-md transition hover:scale-105 active:scale-95 sm:text-xs ${
+                className={`max-w-full rounded-full border px-3 py-1 text-left text-[10px] font-black uppercase tracking-widest backdrop-blur-md transition hover:scale-105 active:scale-95 sm:text-xs ${
                   categoryActive
                     ? 'border-blue-300/70 bg-blue-600/35 text-white shadow-[0_0_14px_rgba(59,130,246,0.55)]'
                     : 'border-red-400/45 bg-slate-950/40 text-red-400 hover:border-blue-400/50 hover:text-blue-200'
@@ -392,7 +392,7 @@ export default function SwipeFeed({
               </span>
             </div>
             <div className="mt-1.5 flex flex-wrap items-end gap-2">
-              <h2 className="min-w-[14rem] flex-1 bg-gradient-to-r from-white via-white to-slate-100 bg-clip-text text-3xl font-black leading-[1.05] text-transparent drop-shadow-[0_0_18px_rgba(255,255,255,0.9)] sm:text-4xl">
+              <h2 className="min-w-0 flex-1 break-words bg-gradient-to-r from-white via-white to-slate-100 bg-clip-text text-2xl font-black leading-[1.05] text-transparent drop-shadow-[0_0_18px_rgba(255,255,255,0.9)] sm:text-4xl">
                 {project.title}
               </h2>
               <TrustBadge tier={project.tier} />

@@ -40,20 +40,20 @@ export default function ProfileModal({
         className="pointer-events-auto absolute inset-0 bg-slate-950/55 backdrop-blur-[2px]"
       />
 
-      <div className="pointer-events-auto absolute inset-x-4 bottom-28 top-16 mx-auto flex max-w-md flex-col overflow-hidden rounded-[1.75rem] border border-blue-400/30 bg-slate-900/85 shadow-[0_0_40px_rgba(59,130,246,0.28)] backdrop-blur-md">
-        <div className="relative border-b border-white/10 px-5 pb-4 pt-5">
+      <div className="pointer-events-auto absolute inset-x-3 bottom-28 top-[max(0.75rem,env(safe-area-inset-top))] mx-auto flex max-h-[calc(100dvh-8.5rem)] max-w-md flex-col overflow-hidden rounded-[1.75rem] border border-blue-400/30 bg-slate-900/85 shadow-[0_0_40px_rgba(59,130,246,0.28)] backdrop-blur-md sm:inset-x-4 sm:top-16">
+        <div className="relative shrink-0 border-b border-white/10 px-4 pb-4 pt-5 sm:px-5">
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-4 top-4 rounded-full border border-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-300 transition hover:bg-white/5 hover:text-white"
+            className="absolute right-3 top-4 rounded-full border border-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-300 transition hover:bg-white/5 hover:text-white sm:right-4"
           >
             Закрыть
           </button>
 
-          <p className="text-[10px] font-black uppercase tracking-widest text-blue-400">
+          <p className="pr-16 text-[10px] font-black uppercase tracking-widest text-blue-400">
             Профиль P2P
           </p>
-          <h2 className="mt-2 max-w-[85%] bg-gradient-to-r from-white via-white to-slate-100 bg-clip-text text-2xl font-black text-transparent drop-shadow-[0_0_16px_rgba(255,255,255,0.85)]">
+          <h2 className="mt-2 max-w-[calc(100%-4.5rem)] truncate bg-gradient-to-r from-white via-white to-slate-100 bg-clip-text text-xl font-black text-transparent drop-shadow-[0_0_16px_rgba(255,255,255,0.85)] sm:text-2xl">
             {userEmail || 'Гость'}
           </h2>
           <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">
@@ -61,8 +61,8 @@ export default function ProfileModal({
           </p>
         </div>
 
-        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-5 py-4">
-          <div className="grid grid-cols-3 gap-2">
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
             {[
               ['Баланс', usd.format(balanceUsd)],
               ['Пожертвовано', usd.format(donatedUsd)],
@@ -70,12 +70,12 @@ export default function ProfileModal({
             ].map(([label, value]) => (
               <div
                 key={label}
-                className="rounded-2xl border border-blue-500/35 bg-slate-950/50 p-3 text-center shadow-[inset_0_0_18px_rgba(59,130,246,0.12)]"
+                className="rounded-2xl border border-blue-500/35 bg-slate-950/50 p-2 text-center shadow-[inset_0_0_18px_rgba(59,130,246,0.12)] sm:p-3"
               >
-                <div className="bg-gradient-to-r from-white via-white to-slate-200 bg-clip-text text-sm font-black text-transparent">
+                <div className="truncate bg-gradient-to-r from-white via-white to-slate-200 bg-clip-text text-[11px] font-black text-transparent sm:text-sm">
                   {value}
                 </div>
-                <div className="mt-1 text-[8px] font-bold uppercase tracking-wider text-blue-300/90">
+                <div className="mt-1 text-[7px] font-bold uppercase tracking-wider text-blue-300/90 sm:text-[8px]">
                   {label}
                 </div>
               </div>
@@ -166,7 +166,7 @@ export default function ProfileModal({
           </section>
         </div>
 
-        <div className="border-t border-white/10 p-4">
+        <div className="shrink-0 border-t border-white/10 p-3 sm:p-4">
           <button
             type="button"
             onClick={onLogout}

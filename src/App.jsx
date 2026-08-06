@@ -452,9 +452,9 @@ function App() {
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
 
       {/* HUD карты: глобальный обзор, карта остаётся интерактивной */}
-      <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between p-4 sm:p-6">
-        <div className="mt-2 flex w-full max-w-md flex-col items-center self-center sm:mt-8">
-          <div className="bg-gradient-to-r from-white via-white to-slate-100 bg-clip-text text-4xl font-black text-transparent drop-shadow-[0_0_22px_rgba(255,255,255,0.95)] sm:text-6xl">
+      <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between p-3 sm:p-6">
+        <div className="mt-[max(3.25rem,calc(env(safe-area-inset-top)+2.75rem))] flex w-full max-w-md flex-col items-center self-center sm:mt-8">
+          <div className="bg-gradient-to-r from-white via-white to-slate-100 bg-clip-text text-3xl font-black text-transparent drop-shadow-[0_0_22px_rgba(255,255,255,0.95)] sm:text-6xl">
             {counter.toLocaleString('en-US')}
           </div>
           <div className="mt-2 text-sm font-bold uppercase tracking-widest text-white opacity-90">
@@ -493,7 +493,7 @@ function App() {
           </div>
         </div>
 
-        <div className="pointer-events-auto mx-auto mb-24 flex w-full max-w-md flex-col items-center space-y-3 sm:mb-28">
+        <div className="pointer-events-auto mx-auto mb-[calc(6.5rem+env(safe-area-inset-bottom))] flex w-full max-w-md flex-col items-center space-y-3 sm:mb-28">
           {visibleProjects.length === 0 ? (
             <div className="w-full rounded-3xl border border-blue-400/35 bg-slate-900/80 p-4 text-center shadow-2xl backdrop-blur-md sm:p-5">
               <p className="text-[10px] font-black uppercase tracking-widest text-blue-300">

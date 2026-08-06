@@ -264,19 +264,19 @@ export default function CreateProjectModal({ onSubmit, onClose }) {
         className="pointer-events-auto absolute inset-0 bg-slate-950/55 backdrop-blur-[2px]"
       />
 
-      <div className="pointer-events-auto absolute inset-x-4 bottom-28 top-12 mx-auto flex max-w-md flex-col overflow-hidden rounded-[1.75rem] border border-blue-400/30 bg-slate-900/85 shadow-[0_0_40px_rgba(59,130,246,0.28)] backdrop-blur-md">
-        <div className="relative border-b border-white/10 px-5 pb-4 pt-5">
+      <div className="pointer-events-auto absolute inset-x-3 bottom-28 top-[max(0.75rem,env(safe-area-inset-top))] mx-auto flex max-h-[calc(100dvh-8.5rem)] max-w-md flex-col overflow-hidden rounded-[1.75rem] border border-blue-400/30 bg-slate-900/85 shadow-[0_0_40px_rgba(59,130,246,0.28)] backdrop-blur-md sm:inset-x-4 sm:top-12">
+        <div className="relative shrink-0 border-b border-white/10 px-4 pb-4 pt-5 sm:px-5">
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-4 top-4 rounded-full border border-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-300 transition hover:bg-white/5 hover:text-white"
+            className="absolute right-3 top-4 rounded-full border border-white/15 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-slate-300 transition hover:bg-white/5 hover:text-white sm:right-4"
           >
             Закрыть
           </button>
-          <p className="text-[10px] font-black uppercase tracking-widest text-red-400">
+          <p className="pr-16 text-[10px] font-black uppercase tracking-widest text-red-400">
             Новая миссия
           </p>
-          <h2 className="mt-2 bg-gradient-to-r from-white via-white to-slate-100 bg-clip-text text-2xl font-black text-transparent drop-shadow-[0_0_16px_rgba(255,255,255,0.85)]">
+          <h2 className="mt-2 max-w-[calc(100%-4.5rem)] bg-gradient-to-r from-white via-white to-slate-100 bg-clip-text text-xl font-black text-transparent drop-shadow-[0_0_16px_rgba(255,255,255,0.85)] sm:text-2xl">
             Создать сбор
           </h2>
           <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-400">
@@ -285,7 +285,7 @@ export default function CreateProjectModal({ onSubmit, onClose }) {
         </div>
 
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-4">
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
             <Field label="Название проекта">
               <input
                 value={title}
@@ -430,7 +430,7 @@ export default function CreateProjectModal({ onSubmit, onClose }) {
             ) : null}
           </div>
 
-          <div className="border-t border-white/10 p-4">
+          <div className="shrink-0 border-t border-white/10 p-3 sm:p-4">
             <button
               type="submit"
               className="w-full rounded-3xl border border-red-400/60 bg-gradient-to-r from-red-950/55 via-red-600/45 to-red-950/55 py-3.5 text-xs font-black uppercase tracking-widest text-white shadow-[inset_0_0_18px_rgba(255,255,255,0.16),inset_0_0_30px_rgba(239,68,68,0.35),0_0_28px_rgba(239,68,68,0.7)] backdrop-blur-md transition hover:scale-[1.01] active:scale-95"

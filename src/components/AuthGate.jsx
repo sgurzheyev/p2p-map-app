@@ -31,11 +31,11 @@ export default function AuthGate({ onAuthenticated, onClose }) {
   };
 
   return (
-    <div className="absolute inset-0 z-40 flex items-center justify-center bg-slate-950/70 backdrop-blur-md p-6 pointer-events-auto">
-      <div className="w-full max-w-md rounded-3xl border border-white/15 bg-slate-900/70 p-6 shadow-[0_0_40px_rgba(59,130,246,0.25)] backdrop-blur-md">
+    <div className="absolute inset-0 z-40 flex items-center justify-center bg-slate-950/70 p-4 backdrop-blur-md pointer-events-auto sm:p-6">
+      <div className="max-h-[min(90dvh,40rem)] w-full max-w-md overflow-y-auto overscroll-contain rounded-3xl border border-white/15 bg-slate-900/70 p-5 shadow-[0_0_40px_rgba(59,130,246,0.25)] backdrop-blur-md sm:p-6">
         <div className="mb-6 text-center">
           <p className="text-xs font-black uppercase tracking-widest text-blue-400">Безопасный вход</p>
-          <h2 className="mt-2 text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-slate-100 drop-shadow-[0_0_18px_rgba(255,255,255,0.9)]">
+          <h2 className="mt-2 bg-gradient-to-r from-white via-white to-slate-100 bg-clip-text text-2xl font-black text-transparent drop-shadow-[0_0_18px_rgba(255,255,255,0.9)] sm:text-3xl">
             P2P Beacon
           </h2>
           <p className="mt-3 text-sm text-slate-300">

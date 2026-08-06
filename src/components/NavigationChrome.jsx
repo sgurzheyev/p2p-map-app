@@ -93,23 +93,23 @@ function ContextPanel({
   if (!panel || panel === 'profile' || panel === 'create') return null;
 
   return (
-    <div className="pointer-events-auto absolute inset-x-4 bottom-28 z-[36] mx-auto flex max-h-[min(58vh,28rem)] max-w-md flex-col overflow-hidden rounded-3xl border border-white/15 bg-slate-900/80 shadow-[0_0_32px_rgba(59,130,246,0.22)] backdrop-blur-md">
-      <div className="relative border-b border-white/10 px-5 pb-3 pt-5">
+    <div className="pointer-events-auto absolute inset-x-3 bottom-28 z-[36] mx-auto flex max-h-[min(52dvh,28rem)] max-w-md flex-col overflow-hidden rounded-3xl border border-white/15 bg-slate-900/80 shadow-[0_0_32px_rgba(59,130,246,0.22)] backdrop-blur-md sm:inset-x-4 sm:max-h-[min(58dvh,28rem)]">
+      <div className="relative shrink-0 border-b border-white/10 px-4 pb-3 pt-5 sm:px-5">
         <button
           type="button"
           onClick={onClose}
           aria-label="Закрыть панель"
-          className="absolute right-4 top-4 rounded-full p-2 text-slate-400 transition hover:bg-white/5 hover:text-white"
+          className="absolute right-3 top-4 rounded-full p-2 text-slate-400 transition hover:bg-white/5 hover:text-white sm:right-4"
         >
           <Icon name="close" className="h-4 w-4" />
         </button>
 
         {panel === 'activity' ? (
           <>
-            <p className="text-[10px] font-black uppercase tracking-widest text-blue-400">
+            <p className="pr-10 text-[10px] font-black uppercase tracking-widest text-blue-400">
               Активность
             </p>
-            <h3 className="mt-2 bg-gradient-to-r from-white via-white to-slate-100 bg-clip-text text-2xl font-black text-transparent drop-shadow-[0_0_14px_rgba(255,255,255,0.7)]">
+            <h3 className="mt-2 max-w-[calc(100%-2.5rem)] bg-gradient-to-r from-white via-white to-slate-100 bg-clip-text text-xl font-black text-transparent drop-shadow-[0_0_14px_rgba(255,255,255,0.7)] sm:text-2xl">
               Журнал помощи
             </h3>
           </>
@@ -117,20 +117,20 @@ function ContextPanel({
 
         {panel === 'support' ? (
           <>
-            <p className="text-[10px] font-black uppercase tracking-widest text-red-400">
+            <p className="pr-10 text-[10px] font-black uppercase tracking-widest text-red-400">
               Поддержка
             </p>
-            <h3 className="mt-2 bg-gradient-to-r from-white via-white to-slate-100 bg-clip-text text-2xl font-black text-transparent drop-shadow-[0_0_14px_rgba(255,255,255,0.7)]">
+            <h3 className="mt-2 max-w-[calc(100%-2.5rem)] bg-gradient-to-r from-white via-white to-slate-100 bg-clip-text text-xl font-black text-transparent drop-shadow-[0_0_14px_rgba(255,255,255,0.7)] sm:text-2xl">
               Мы на связи
             </h3>
           </>
         ) : null}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
         {panel === 'activity' ? (
           <>
-            <div className="mb-4 grid grid-cols-3 gap-2 text-center">
+            <div className="mb-4 grid grid-cols-3 gap-1.5 text-center sm:gap-2">
               {[
                 ['Баланс', usd.format(balanceUsd)],
                 ['Донаты', usd.format(donatedUsd)],
@@ -138,9 +138,9 @@ function ContextPanel({
               ].map(([label, value]) => (
                 <div
                   key={label}
-                  className="rounded-2xl border border-blue-500/30 bg-slate-950/45 p-2.5 shadow-[inset_0_0_14px_rgba(59,130,246,0.1)]"
+                  className="rounded-2xl border border-blue-500/30 bg-slate-950/45 p-2 shadow-[inset_0_0_14px_rgba(59,130,246,0.1)] sm:p-2.5"
                 >
-                  <div className="bg-gradient-to-r from-white via-white to-slate-200 bg-clip-text text-[11px] font-black text-transparent">
+                  <div className="truncate bg-gradient-to-r from-white via-white to-slate-200 bg-clip-text text-[10px] font-black text-transparent sm:text-[11px]">
                     {value}
                   </div>
                   <div className="mt-1 text-[7px] font-bold uppercase tracking-wider text-blue-300/90">
@@ -173,7 +173,7 @@ function ContextPanel({
                         <p className="mt-1 truncate text-sm font-bold text-white">
                           {entry.title}
                         </p>
-                        <p className="mt-0.5 text-[10px] text-slate-400">
+                        <p className="mt-0.5 break-words text-[10px] text-slate-400">
                           {entry.detail}
                         </p>
                       </div>
@@ -241,8 +241,8 @@ export default function NavigationChrome({
         activityLog={activityLog}
       />
 
-      <div className="pointer-events-auto absolute bottom-4 left-1/2 w-[calc(100%-2rem)] max-w-md -translate-x-1/2">
-        <nav className="grid grid-cols-[1fr_1fr_auto_1fr_1fr] items-center gap-1 rounded-[1.75rem] border border-white/15 bg-slate-900/80 p-2 shadow-[0_0_30px_rgba(2,6,23,0.75),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-md">
+      <div className="pointer-events-auto absolute bottom-[max(1rem,env(safe-area-inset-bottom))] left-1/2 w-[calc(100%-1.5rem)] max-w-md -translate-x-1/2 sm:w-[calc(100%-2rem)]">
+        <nav className="grid grid-cols-[1fr_1fr_auto_1fr_1fr] items-center gap-0.5 rounded-[1.75rem] border border-white/15 bg-slate-900/80 p-1.5 shadow-[0_0_30px_rgba(2,6,23,0.75),inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-md sm:gap-1 sm:p-2">
           <NavButton
             icon={mode === 'feed' ? 'map' : 'feed'}
             label={mode === 'feed' ? 'Карта' : 'Лента'}
@@ -259,11 +259,11 @@ export default function NavigationChrome({
             type="button"
             onClick={onPrimary}
             aria-label="Создать миссию"
-            className={`-mt-7 flex h-16 w-16 items-center justify-center rounded-full border border-red-300/70 bg-gradient-to-br from-red-950/60 via-red-600/55 to-red-950/60 text-white shadow-[inset_0_0_18px_rgba(255,255,255,0.2),inset_0_0_30px_rgba(239,68,68,0.4),0_0_34px_rgba(239,68,68,0.85)] backdrop-blur-md transition hover:scale-105 active:scale-95 ${
+            className={`-mt-7 flex h-14 w-14 items-center justify-center rounded-full border border-red-300/70 bg-gradient-to-br from-red-950/60 via-red-600/55 to-red-950/60 text-white shadow-[inset_0_0_18px_rgba(255,255,255,0.2),inset_0_0_30px_rgba(239,68,68,0.4),0_0_34px_rgba(239,68,68,0.85)] backdrop-blur-md transition hover:scale-105 active:scale-95 sm:h-16 sm:w-16 ${
               activePanel === 'create' ? 'ring-2 ring-blue-400/70' : ''
             }`}
           >
-            <Icon name="plus" className="h-7 w-7" />
+            <Icon name="plus" className="h-6 w-6 sm:h-7 sm:w-7" />
           </button>
           <NavButton
             icon="profile"
@@ -282,11 +282,11 @@ export default function NavigationChrome({
 
       {mode === 'map' ? (
         <>
-          <div className="pointer-events-auto absolute left-4 top-4 flex flex-row gap-3">
+          <div className="pointer-events-auto absolute left-3 top-[max(1rem,env(safe-area-inset-top))] flex flex-row gap-2 sm:left-4 sm:top-4 sm:gap-3">
             <FloatingButton icon="locate" label="Моё местоположение" onClick={onLocate} />
             <FloatingButton icon="chat" label="Поддержка" onClick={onSupport} />
           </div>
-          <div className="pointer-events-auto absolute right-4 top-4">
+          <div className="pointer-events-auto absolute right-3 top-[max(1rem,env(safe-area-inset-top))] sm:right-4 sm:top-4">
             <FloatingButton
               icon="beacon"
               label="Прямая помощь"

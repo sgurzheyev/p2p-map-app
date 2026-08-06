@@ -16,7 +16,9 @@ export default function DiscoverySearch({
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         autoComplete="off"
-        className="w-full rounded-2xl border border-blue-400/35 bg-slate-950/55 px-4 py-2.5 text-sm text-white outline-none backdrop-blur-md transition placeholder:text-slate-500 focus:border-blue-500 focus:shadow-[0_0_18px_rgba(59,130,246,0.45)]"
+        className={`w-full rounded-2xl border border-blue-400/35 bg-slate-950/55 py-2.5 text-sm text-white outline-none backdrop-blur-md transition placeholder:text-slate-500 focus:border-blue-500 focus:shadow-[0_0_18px_rgba(59,130,246,0.45)] ${
+          value ? 'pl-4 pr-20' : 'px-4'
+        }`}
       />
       {value ? (
         <button

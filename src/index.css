@@ -46,7 +46,7 @@ body {
 @keyframes toast-enter {
   from {
     opacity: 0;
-    transform: translateY(12px) scale(0.96);
+    transform: translateY(-12px) scale(0.96);
   }
   to {
     opacity: 1;
