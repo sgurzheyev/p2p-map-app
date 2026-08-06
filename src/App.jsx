@@ -16,6 +16,16 @@ import {
   findProjectIndex,
   projectsToGeoJSON,
 } from './data/projects';
+import { isSupabaseConfigured } from './lib/supabase';
+import {
+  fetchBookmarks,
+  fetchMissions,
+  fetchProfile,
+  publishMission,
+  recordDonation,
+  saveBookmark,
+  upsertProfile,
+} from './lib/missionsApi';
 
 mapboxgl.accessToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
@@ -55,6 +65,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState(null);
   const [featuredBannerDismissed, setFeaturedBannerDismissed] = useState(false);
+  const [missionsLoading, setMissionsLoading] = useState(true);
 
   const visibleProjects = useMemo(
     () => filterProjects(projects, { query: searchQuery, filter: activeFilter }),
@@ -85,6 +96,39 @@ function App() {
     setSearchQuery('');
     setActiveFilter(null);
   };
+
+  const loadMissions = async ({ notifyOnError = false } = {}) => {
+    setMissionsLoading(true);
+    const { data, error } = await fetchMissions();
+    setProjects(data?.length ? data : AID_PROJECTS);
+    setMissionsLoading(false);
+    if (notifyOnError && error && isSupabaseConfigured) {
+      pushToast('Не удалось загрузить миссии с сервера — показан локальный каталог', {
+        tone: 'accent',
+      });
+    }
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      setMissionsLoading(true);
+      const { data, error } = await fetchMissions();
+      if (cancelled) return;
+      setProjects(data?.length ? data : AID_PROJECTS);
+      setMissionsLoading(false);
+      if (error && isSupabaseConfigured) {
+        pushToast('Не удалось загрузить миссии с сервера — показан локальный каталог', {
+          tone: 'accent',
+        });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pushToast]);
 
   const openFeedAt = (projectId = null) => {
     let nextProjects = projects;
@@ -240,10 +284,31 @@ function App() {
     setActivePanel((current) => (current === 'create' ? null : 'create'));
   };
 
-  const handleAuthenticated = (email) => {
+  const handleAuthenticated = async (email) => {
     setUserEmail(email);
     setIsAuthenticated(true);
     setShowAuthGate(false);
+
+    const [{ data: bookmarks }, { data: profile }] = await Promise.all([
+      fetchBookmarks(email),
+      fetchProfile(email),
+    ]);
+
+    if (bookmarks?.length) {
+      setSavedIds(bookmarks);
+    }
+
+    if (profile && Number.isFinite(profile.balanceUsd)) {
+      setBalanceUsd(profile.balanceUsd);
+    }
+    if (profile && Number.isFinite(profile.donatedUsd)) {
+      setDonatedUsd(profile.donatedUsd);
+    }
+
+    await upsertProfile(email, {
+      balanceUsd: profile?.balanceUsd ?? INITIAL_BALANCE_USD,
+      donatedUsd: profile?.donatedUsd ?? 0,
+    });
 
     if (pendingPanel === 'profile') {
       setPendingPanel(null);
@@ -289,9 +354,9 @@ function App() {
     setDonationHistory([]);
     setActivityLog([]);
     setSavedIds([]);
-    setProjects(AID_PROJECTS);
     resetDiscoveryFilters();
     setFeaturedBannerDismissed(false);
+    loadMissions({ notifyOnError: false });
   };
 
   const togglePanel = (panel) => {
@@ -306,27 +371,36 @@ function App() {
     setActivePanel((current) => (current === panel ? null : panel));
   };
 
-  const handleCreateProject = (project) => {
-    setProjects((list) => [project, ...list]);
+  const handleCreateProject = async (project) => {
+    const { data: published, error } = await publishMission(project, userEmail || null);
+    const nextProject = published ?? project;
+
+    setProjects((list) => [nextProject, ...list.filter((item) => item.id !== nextProject.id)]);
     resetDiscoveryFilters();
     setActivePanel(null);
     setShowFeed(false);
     pushActivity({
       type: 'create',
-      title: project.title,
-      detail: `${project.location} · цель ${usd.format(project.goalUsd)}`,
-      amountUsd: project.goalUsd,
-      projectId: project.id,
+      title: nextProject.title,
+      detail: `${nextProject.location} · цель ${usd.format(nextProject.goalUsd)}`,
+      amountUsd: nextProject.goalUsd,
+      projectId: nextProject.id,
     });
-    pushToast('Миссия успешно опубликована на карте', { tone: 'success' });
+
+    if (error && isSupabaseConfigured) {
+      pushToast('Миссия сохранена локально — сервер временно недоступен', {
+        tone: 'accent',
+      });
+    } else {
+      pushToast('Миссия успешно опубликована на карте', { tone: 'success' });
+    }
 
     map.current?.flyTo({
-      center: project.coordinates,
+      center: nextProject.coordinates,
       zoom: 5.5,
       duration: 1200,
     });
 
-    // Сразу открываем карточку новой миссии в ленте
     window.clearTimeout(createRevealTimer.current);
     createRevealTimer.current = window.setTimeout(() => {
       setFeedInitialIndex(0);
@@ -392,8 +466,11 @@ function App() {
       projects.find((item) => item.id === projectId) ||
       AID_PROJECTS.find((item) => item.id === projectId);
 
-    setBalanceUsd((value) => value - DONATION_USD);
-    setDonatedUsd((value) => value + DONATION_USD);
+    const nextBalance = balanceUsd - DONATION_USD;
+    const nextDonated = donatedUsd + DONATION_USD;
+
+    setBalanceUsd(nextBalance);
+    setDonatedUsd(nextDonated);
     setCounter((value) => value + 1);
     setDonationHistory((history) => [
       {
@@ -420,6 +497,15 @@ function App() {
       projectId,
     });
     pushToast('Донат успешно отправлен!', { tone: 'success' });
+
+    void recordDonation(projectId, DONATION_USD);
+    if (userEmail) {
+      void upsertProfile(userEmail, {
+        balanceUsd: nextBalance,
+        donatedUsd: nextDonated,
+      });
+    }
+
     return true;
   };
 
@@ -445,11 +531,21 @@ function App() {
       projectId,
     });
     pushToast('Добавлено в избранное', { tone: 'info' });
+
+    if (userEmail) {
+      void saveBookmark(userEmail, projectId).then(({ error }) => {
+        if (error && isSupabaseConfigured) {
+          pushToast('Избранное сохранено локально — сервер недоступен', {
+            tone: 'accent',
+          });
+        }
+      });
+    }
   };
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-slate-900 font-sans">
-      <div ref={mapContainer} className="absolute inset-0 h-full w-full" />
+    <div className="relative h-[100dvh] w-screen overflow-hidden overscroll-none bg-slate-900 font-sans">
+      <div ref={mapContainer} className="absolute inset-0 h-full w-full touch-none" />
 
       <ToastStack toasts={toasts} onDismiss={dismissToast} />
 
@@ -471,6 +567,11 @@ function App() {
               Нажмите точку на карте, чтобы открыть профиль
             </div>
           )}
+          {missionsLoading ? (
+            <div className="mt-2 text-[9px] font-bold uppercase tracking-widest text-slate-500">
+              Синхронизация миссий…
+            </div>
+          ) : null}
 
           <div className="pointer-events-auto mt-4 w-full px-1">
             <DiscoverySearch

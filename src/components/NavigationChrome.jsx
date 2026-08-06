@@ -127,7 +127,7 @@ function ContextPanel({
         ) : null}
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scroll-touch px-4 py-4 sm:px-5">
         {panel === 'activity' ? (
           <>
             <div className="mb-4 grid grid-cols-3 gap-1.5 text-center sm:gap-2">

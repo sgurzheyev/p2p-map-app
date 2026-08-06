@@ -106,7 +106,7 @@ function CityAutocomplete({ value, onChange, onSelectCity }) {
 
       {/* In-flow list: stays inside modal scroll area, avoids clipping bottom nav */}
       {open ? (
-        <div className="mt-2 max-h-40 overflow-y-auto rounded-2xl border border-blue-400/35 bg-slate-950/90 shadow-[0_0_24px_rgba(59,130,246,0.28)] backdrop-blur-md">
+        <div className="mt-2 max-h-40 overflow-y-auto scroll-touch rounded-2xl border border-blue-400/35 bg-slate-950/90 shadow-[0_0_24px_rgba(59,130,246,0.28)] backdrop-blur-md">
           {suggestions.length === 0 ? (
             <p className="px-4 py-3 text-xs text-slate-400">
               Город не найден — можно оставить свой вариант и задать координаты вручную.
@@ -285,7 +285,7 @@ export default function CreateProjectModal({ onSubmit, onClose }) {
         </div>
 
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain scroll-touch px-4 py-4 sm:px-5">
             <Field label="Название проекта">
               <input
                 value={title}

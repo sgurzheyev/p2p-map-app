@@ -285,7 +285,7 @@ export default function SwipeFeed({
 
   return (
     <div
-      className="absolute inset-0 z-30 overflow-hidden bg-slate-950 pointer-events-auto"
+      className="absolute inset-0 z-30 overflow-hidden overscroll-none bg-slate-950 pointer-events-auto"
       onWheel={onWheel}
     >
       <div className="absolute inset-0 scale-[1.02]">
@@ -300,6 +300,7 @@ export default function SwipeFeed({
           transition: isDragging
             ? 'none'
             : `transform ${TRANSITION_MS}ms cubic-bezier(0.22, 1, 0.36, 1), opacity ${TRANSITION_MS}ms ease`,
+          WebkitUserSelect: 'none',
         }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}

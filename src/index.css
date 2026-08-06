@@ -6,6 +6,7 @@ body,
 #root {
   width: 100%;
   height: 100%;
+  height: 100dvh;
 }
 
 body {
@@ -13,6 +14,35 @@ body {
   padding: 0;
   background-color: #0f172a;
   overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+/* Momentum scrolling for modal / panel scroll shells on iOS */
+.scroll-touch {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+
+/* Interactive controls: avoid 300ms ghost clicks on mobile */
+button,
+a,
+[role='button'],
+input,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+/* Keep form fields ≥16px to prevent iOS auto-zoom */
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
 }
 
 @keyframes crystal-success-pulse {
