@@ -7,6 +7,8 @@ import DiscoverySearch from './components/DiscoverySearch';
 import NavigationChrome from './components/NavigationChrome';
 import ProfileModal from './components/ProfileModal';
 import SwipeFeed from './components/SwipeFeed';
+import ToastStack from './components/ToastStack';
+import { useToasts } from './hooks/useToasts';
 import {
   AID_PROJECTS,
   DONATION_USD,
@@ -30,6 +32,7 @@ function App() {
   const map = useRef(null);
   const openProjectRef = useRef(null);
   const createRevealTimer = useRef(null);
+  const { toasts, pushToast, dismissToast } = useToasts();
 
   // Глобальный обзор (карта) и слой вовлечения (лента) разделены
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -313,6 +316,7 @@ function App() {
       amountUsd: project.goalUsd,
       projectId: project.id,
     });
+    pushToast('Миссия успешно опубликована на карте', { tone: 'success' });
 
     map.current?.flyTo({
       center: project.coordinates,
@@ -413,6 +417,7 @@ function App() {
       amountUsd: DONATION_USD,
       projectId,
     });
+    pushToast('Донат успешно отправлен!', { tone: 'success' });
     return true;
   };
 
@@ -437,11 +442,14 @@ function App() {
       detail: 'Добавлено в избранное',
       projectId,
     });
+    pushToast('Добавлено в избранное', { tone: 'info' });
   };
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-slate-900 font-sans">
       <div ref={mapContainer} className="absolute inset-0 h-full w-full" />
+
+      <ToastStack toasts={toasts} onDismiss={dismissToast} />
 
       {/* HUD карты: глобальный обзор, карта остаётся интерактивной */}
       <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between p-4 sm:p-6">
