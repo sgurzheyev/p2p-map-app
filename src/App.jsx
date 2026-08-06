@@ -54,6 +54,7 @@ function App() {
   const [savedIds, setSavedIds] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState(null);
+  const [featuredBannerDismissed, setFeaturedBannerDismissed] = useState(false);
 
   const visibleProjects = useMemo(
     () => filterProjects(projects, { query: searchQuery, filter: activeFilter }),
@@ -290,6 +291,7 @@ function App() {
     setSavedIds([]);
     setProjects(AID_PROJECTS);
     resetDiscoveryFilters();
+    setFeaturedBannerDismissed(false);
   };
 
   const togglePanel = (panel) => {
@@ -512,29 +514,60 @@ function App() {
             </div>
           ) : (
             <>
-              <div className="w-full rounded-3xl border border-slate-700/50 bg-slate-900/80 p-4 text-center shadow-2xl backdrop-blur-md sm:p-5">
-                <p className="mb-1.5 text-[10px] font-black uppercase tracking-widest text-red-400 sm:text-xs">
-                  {featured.story} (21:00)
-                </p>
-                <h3 className="mb-2 text-base font-black text-white sm:text-lg">{featured.title}</h3>
-
-                <div className="mb-1 flex justify-between text-xs font-bold uppercase tracking-wider text-slate-400">
-                  <span>Собрано: {usd.format(featured.raisedUsd)}</span>
-                  <span>Цель: {usd.format(featured.goalUsd)}</span>
-                </div>
-
-                <div className="mb-2 h-3 w-full overflow-hidden rounded-full border border-slate-700 bg-slate-800">
-                  <div
-                    className="relative h-3 overflow-hidden rounded-full bg-gradient-to-r from-blue-600 via-[#3B82F6] to-blue-400 shadow-[0_0_14px_rgba(59,130,246,0.85)] animate-pulse transition-all duration-300"
-                    style={{ width: `${featuredProgress}%` }}
+              {!featuredBannerDismissed ? (
+                <div className="relative w-full rounded-3xl border border-slate-700/50 bg-slate-900/80 p-4 text-center shadow-2xl backdrop-blur-md sm:p-5">
+                  <button
+                    type="button"
+                    onClick={() => setFeaturedBannerDismissed(true)}
+                    aria-label="Скрыть баннер миссии"
+                    className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-slate-950/55 text-slate-300 backdrop-blur-md transition hover:border-blue-400/50 hover:text-white"
                   >
-                    <div className="absolute inset-0 animate-pulse bg-white/20" />
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      className="h-3.5 w-3.5"
+                      aria-hidden="true"
+                    >
+                      <path d="m6 6 12 12M18 6 6 18" />
+                    </svg>
+                  </button>
+
+                  <p className="mb-1.5 pr-8 text-[10px] font-black uppercase tracking-widest text-red-400 sm:text-xs">
+                    {featured.story} (21:00)
+                  </p>
+                  <h3 className="mb-2 px-2 text-base font-black text-white sm:text-lg">
+                    {featured.title}
+                  </h3>
+
+                  <div className="mb-1 flex justify-between text-xs font-bold uppercase tracking-wider text-slate-400">
+                    <span>Собрано: {usd.format(featured.raisedUsd)}</span>
+                    <span>Цель: {usd.format(featured.goalUsd)}</span>
                   </div>
+
+                  <div className="mb-2 h-3 w-full overflow-hidden rounded-full border border-slate-700 bg-slate-800">
+                    <div
+                      className="relative h-3 overflow-hidden rounded-full bg-gradient-to-r from-blue-600 via-[#3B82F6] to-blue-400 shadow-[0_0_14px_rgba(59,130,246,0.85)] animate-pulse transition-all duration-300"
+                      style={{ width: `${featuredProgress}%` }}
+                    >
+                      <div className="absolute inset-0 animate-pulse bg-white/20" />
+                    </div>
+                  </div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-blue-400">
+                    Осталось: {featured.hoursLeft} час {featured.minutesLeft} минут
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() => setFeaturedBannerDismissed(true)}
+                    className="mt-3 text-[10px] font-bold uppercase tracking-widest text-slate-400 transition hover:text-blue-300"
+                  >
+                    Не сейчас
+                  </button>
                 </div>
-                <p className="text-xs font-bold uppercase tracking-widest text-blue-400">
-                  Осталось: {featured.hoursLeft} час {featured.minutesLeft} минут
-                </p>
-              </div>
+              ) : null}
 
               <button
                 type="button"
