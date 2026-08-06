@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { DONATION_USD } from '../data/projects';
+import DiscoverySearch from './DiscoverySearch';
 import TrustBadge from './TrustBadge';
 
 const usd = new Intl.NumberFormat('en-US', {
@@ -31,6 +32,38 @@ function ProjectBackdrop({ project }) {
   );
 }
 
+function FilterBanner({ activeFilter, searchQuery, count, onReset }) {
+  const hasFilter = Boolean(activeFilter) || Boolean(searchQuery.trim());
+  if (!hasFilter) return null;
+
+  const filterLabel =
+    activeFilter?.type === 'tag'
+      ? activeFilter.value
+      : activeFilter?.type === 'category'
+        ? activeFilter.value
+        : null;
+
+  return (
+    <div
+      className="pointer-events-auto flex flex-wrap items-center gap-2 rounded-2xl border border-blue-400/40 bg-slate-950/55 px-3 py-2 shadow-[0_0_18px_rgba(59,130,246,0.28)] backdrop-blur-md"
+      onPointerDown={(event) => event.stopPropagation()}
+    >
+      <p className="min-w-0 flex-1 text-[10px] font-bold uppercase tracking-wider text-blue-100">
+        Найдено: {count}
+        {filterLabel ? ` · ${filterLabel}` : ''}
+        {searchQuery.trim() ? ` · «${searchQuery.trim()}»` : ''}
+      </p>
+      <button
+        type="button"
+        onClick={onReset}
+        className="shrink-0 rounded-full border border-red-400/50 bg-red-950/40 px-3 py-1.5 text-[9px] font-black uppercase tracking-wider text-white shadow-[0_0_14px_rgba(239,68,68,0.4)] backdrop-blur-md transition hover:scale-105 active:scale-95"
+      >
+        Сбросить фильтр
+      </button>
+    </div>
+  );
+}
+
 /**
  * Вертикальная лента свайпов в стиле TikTok.
  * Влево — пропустить, вправо — в избранное, кристальная кнопка — донат $1.
@@ -40,6 +73,11 @@ export default function SwipeFeed({
   balanceUsd,
   savedIds,
   initialIndex = 0,
+  searchQuery = '',
+  activeFilter = null,
+  onSearchChange,
+  onFilterChange,
+  onResetFilters,
   onSkip,
   onSave,
   onDonate,
@@ -53,7 +91,6 @@ export default function SwipeFeed({
   const [isAnimating, setIsAnimating] = useState(false);
   const [transitionDirection, setTransitionDirection] = useState(1);
   const [flash, setFlash] = useState(null);
-  const [selectedTags, setSelectedTags] = useState([]);
   const [donatePulse, setDonatePulse] = useState(false);
   const pointerStart = useRef({ x: 0, y: 0 });
   const transitionTimer = useRef(null);
@@ -62,10 +99,14 @@ export default function SwipeFeed({
   const wheelLocked = useRef(false);
 
   useEffect(() => {
+    if (projects.length === 0) {
+      setIndex(0);
+      return;
+    }
     if (index > projects.length - 1) {
       setIndex(Math.max(projects.length - 1, 0));
     }
-  }, [index, projects.length]);
+  }, [index, projects]);
 
   useEffect(() => {
     return () => {
@@ -84,6 +125,9 @@ export default function SwipeFeed({
     if (!project) return 0;
     return Math.min(100, Math.round((project.raisedUsd / project.goalUsd) * 100));
   }, [project]);
+
+  const hasActiveFilters =
+    Boolean(activeFilter) || Boolean(searchQuery.trim());
 
   const finishTransition = (nextIndex) => {
     setIndex(nextIndex);
@@ -140,12 +184,22 @@ export default function SwipeFeed({
     }, 700);
   };
 
-  const toggleTag = (tag) => {
-    setSelectedTags((tags) =>
-      tags.includes(tag)
-        ? tags.filter((selected) => selected !== tag)
-        : [...tags, tag],
-    );
+  const applyTagFilter = (tag) => {
+    if (activeFilter?.type === 'tag' && activeFilter.value === tag) {
+      onFilterChange?.(null);
+      return;
+    }
+    onFilterChange?.({ type: 'tag', value: tag });
+    setIndex(0);
+  };
+
+  const applyCategoryFilter = (category) => {
+    if (activeFilter?.type === 'category' && activeFilter.value === category) {
+      onFilterChange?.(null);
+      return;
+    }
+    onFilterChange?.({ type: 'category', value: category });
+    setIndex(0);
   };
 
   const onPointerDown = (event) => {
@@ -200,8 +254,19 @@ export default function SwipeFeed({
 
   if (!project) {
     return (
-      <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/90 pointer-events-auto">
-        <p className="text-white font-bold uppercase tracking-widest">Лента пуста</p>
+      <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/90 px-6 pointer-events-auto">
+        <p className="text-center text-sm font-bold uppercase tracking-widest text-white">
+          {hasActiveFilters ? 'Нет миссий по фильтру' : 'Лента пуста'}
+        </p>
+        {hasActiveFilters ? (
+          <button
+            type="button"
+            onClick={onResetFilters}
+            className="mt-4 rounded-full border border-red-400/50 bg-red-950/40 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white shadow-[0_0_14px_rgba(239,68,68,0.45)] backdrop-blur-md"
+          >
+            Сбросить фильтр
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={onClose}
@@ -215,6 +280,8 @@ export default function SwipeFeed({
 
   const rotate = Math.max(-10, Math.min(10, drag.x / 22));
   const isSaved = savedIds.includes(project.id);
+  const categoryActive =
+    activeFilter?.type === 'category' && activeFilter.value === project.story;
 
   return (
     <div
@@ -259,22 +326,39 @@ export default function SwipeFeed({
         )}
 
         <div
-          className="absolute inset-x-0 top-0 flex items-center justify-between p-5"
+          className="absolute inset-x-0 top-0 space-y-2 p-5"
           onPointerDown={(event) => event.stopPropagation()}
         >
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-full border border-white/20 bg-slate-950/40 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-white backdrop-blur-md"
-          >
-            Карта
-          </button>
-          <div className="text-[10px] font-bold uppercase tracking-widest text-slate-300">
-            {index + 1} / {projects.length}
+          <div className="flex items-center justify-between gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full border border-white/20 bg-slate-950/40 px-4 py-2 text-[10px] font-bold uppercase tracking-widest text-white backdrop-blur-md"
+            >
+              Карта
+            </button>
+            <div className="text-[10px] font-bold uppercase tracking-widest text-slate-300">
+              {index + 1} / {projects.length}
+            </div>
+            <div className="text-[10px] font-bold uppercase tracking-widest text-white">
+              Баланс: {usd.format(balanceUsd)}
+            </div>
           </div>
-          <div className="text-[10px] font-bold uppercase tracking-widest text-white">
-            Баланс: {usd.format(balanceUsd)}
-          </div>
+
+          {onSearchChange ? (
+            <DiscoverySearch
+              value={searchQuery}
+              onChange={onSearchChange}
+              className="max-w-md"
+            />
+          ) : null}
+
+          <FilterBanner
+            activeFilter={activeFilter}
+            searchQuery={searchQuery}
+            count={projects.length}
+            onReset={onResetFilters}
+          />
         </div>
 
         <div className="pointer-events-none absolute right-5 top-1/2 flex -translate-y-1/2 flex-col items-center gap-2">
@@ -287,9 +371,26 @@ export default function SwipeFeed({
 
         <div className="absolute inset-x-0 bottom-0 space-y-3 p-5 pb-28 sm:p-6 sm:pb-28">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-red-400 sm:text-xs">
-              {project.story} · {project.location}
-            </p>
+            <div
+              className="flex flex-wrap items-center gap-2"
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              <button
+                type="button"
+                onClick={() => applyCategoryFilter(project.story)}
+                aria-pressed={categoryActive}
+                className={`rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-widest backdrop-blur-md transition hover:scale-105 active:scale-95 sm:text-xs ${
+                  categoryActive
+                    ? 'border-blue-300/70 bg-blue-600/35 text-white shadow-[0_0_14px_rgba(59,130,246,0.55)]'
+                    : 'border-red-400/45 bg-slate-950/40 text-red-400 hover:border-blue-400/50 hover:text-blue-200'
+                }`}
+              >
+                {project.story}
+              </button>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 sm:text-xs">
+                · {project.location}
+              </span>
+            </div>
             <div className="mt-1.5 flex flex-wrap items-end gap-2">
               <h2 className="min-w-[14rem] flex-1 bg-gradient-to-r from-white via-white to-slate-100 bg-clip-text text-3xl font-black leading-[1.05] text-transparent drop-shadow-[0_0_18px_rgba(255,255,255,0.9)] sm:text-4xl">
                 {project.title}
@@ -301,13 +402,14 @@ export default function SwipeFeed({
               onPointerDown={(event) => event.stopPropagation()}
             >
               {project.tags.map((tag) => {
-                const isActive = selectedTags.includes(tag);
+                const isActive =
+                  activeFilter?.type === 'tag' && activeFilter.value === tag;
                 return (
                   <button
                     key={tag}
                     type="button"
                     aria-pressed={isActive}
-                    onClick={() => toggleTag(tag)}
+                    onClick={() => applyTagFilter(tag)}
                     className={`rounded-full border px-3 py-1.5 text-[9px] font-black tracking-wide backdrop-blur-md transition hover:scale-105 active:scale-95 ${
                       isActive
                         ? 'border-blue-300/70 bg-blue-600/35 text-white shadow-[0_0_14px_rgba(59,130,246,0.6)]'

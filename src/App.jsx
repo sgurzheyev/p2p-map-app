@@ -3,12 +3,14 @@ import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import AuthGate from './components/AuthGate';
 import CreateProjectModal from './components/CreateProjectModal';
+import DiscoverySearch from './components/DiscoverySearch';
 import NavigationChrome from './components/NavigationChrome';
 import ProfileModal from './components/ProfileModal';
 import SwipeFeed from './components/SwipeFeed';
 import {
   AID_PROJECTS,
   DONATION_USD,
+  filterProjects,
   findProjectIndex,
   projectsToGeoJSON,
 } from './data/projects';
@@ -47,12 +49,21 @@ function App() {
   const [activityLog, setActivityLog] = useState([]);
   const [projects, setProjects] = useState(AID_PROJECTS);
   const [savedIds, setSavedIds] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState(null);
 
-  const featured = projects[0] ?? AID_PROJECTS[0];
+  const visibleProjects = useMemo(
+    () => filterProjects(projects, { query: searchQuery, filter: activeFilter }),
+    [projects, searchQuery, activeFilter],
+  );
+
+  const featured = visibleProjects[0] ?? projects[0] ?? AID_PROJECTS[0];
   const featuredProgress = Math.min(
     100,
     Math.round((featured.raisedUsd / featured.goalUsd) * 100),
   );
+  const hasDiscoveryFilters =
+    Boolean(activeFilter) || Boolean(searchQuery.trim());
 
   const savedProjects = useMemo(
     () =>
@@ -66,6 +77,11 @@ function App() {
     [savedIds, projects],
   );
 
+  const resetDiscoveryFilters = () => {
+    setSearchQuery('');
+    setActiveFilter(null);
+  };
+
   const openFeedAt = (projectId = null) => {
     let nextProjects = projects;
 
@@ -78,7 +94,21 @@ function App() {
       }
     }
 
-    const targetIndex = findProjectIndex(nextProjects, projectId);
+    // Сбрасываем фильтр, если целевая миссия скрыта текущим поиском
+    let nextVisible = filterProjects(nextProjects, {
+      query: searchQuery,
+      filter: activeFilter,
+    });
+    if (
+      projectId &&
+      !nextVisible.some((project) => project.id === projectId)
+    ) {
+      setSearchQuery('');
+      setActiveFilter(null);
+      nextVisible = nextProjects;
+    }
+
+    const targetIndex = findProjectIndex(nextVisible, projectId);
 
     if (!isAuthenticated) {
       setPendingProjectId(projectId);
@@ -176,13 +206,13 @@ function App() {
     };
   }, []);
 
-  // Синхронизация точек карты с актуальным списком проектов
+  // Синхронизация точек карты с отфильтрованным списком миссий
   useEffect(() => {
     const source = map.current?.getSource('aid-points');
     if (source) {
-      source.setData(projectsToGeoJSON(projects));
+      source.setData(projectsToGeoJSON(visibleProjects));
     }
-  }, [projects]);
+  }, [visibleProjects]);
 
   const openFeed = () => openFeedAt(null);
 
@@ -225,7 +255,10 @@ function App() {
       return;
     }
 
-    const targetIndex = findProjectIndex(projects, pendingProjectId);
+    const targetIndex = findProjectIndex(
+      filterProjects(projects, { query: searchQuery, filter: activeFilter }),
+      pendingProjectId,
+    );
     setPendingProjectId(null);
     setPendingPanel(null);
     setFeedInitialIndex(targetIndex);
@@ -253,6 +286,7 @@ function App() {
     setActivityLog([]);
     setSavedIds([]);
     setProjects(AID_PROJECTS);
+    resetDiscoveryFilters();
   };
 
   const togglePanel = (panel) => {
@@ -269,6 +303,7 @@ function App() {
 
   const handleCreateProject = (project) => {
     setProjects((list) => [project, ...list]);
+    resetDiscoveryFilters();
     setActivePanel(null);
     setShowFeed(false);
     pushActivity({
@@ -410,7 +445,7 @@ function App() {
 
       {/* HUD карты: глобальный обзор, карта остаётся интерактивной */}
       <div className="pointer-events-none absolute inset-0 z-10 flex flex-col justify-between p-4 sm:p-6">
-        <div className="mt-2 flex flex-col items-center sm:mt-8">
+        <div className="mt-2 flex w-full max-w-md flex-col items-center self-center sm:mt-8">
           <div className="bg-gradient-to-r from-white via-white to-slate-100 bg-clip-text text-4xl font-black text-transparent drop-shadow-[0_0_22px_rgba(255,255,255,0.95)] sm:text-6xl">
             {counter.toLocaleString('en-US')}
           </div>
@@ -426,40 +461,82 @@ function App() {
               Нажмите точку на карте, чтобы открыть профиль
             </div>
           )}
+
+          <div className="pointer-events-auto mt-4 w-full px-1">
+            <DiscoverySearch
+              value={searchQuery}
+              onChange={setSearchQuery}
+            />
+            {hasDiscoveryFilters ? (
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-blue-400/35 bg-slate-950/50 px-3 py-2 backdrop-blur-md">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-blue-100">
+                  На карте: {visibleProjects.length}
+                  {activeFilter?.value ? ` · ${activeFilter.value}` : ''}
+                </p>
+                <button
+                  type="button"
+                  onClick={resetDiscoveryFilters}
+                  className="rounded-full border border-red-400/50 bg-red-950/40 px-3 py-1 text-[9px] font-black uppercase tracking-wider text-white shadow-[0_0_12px_rgba(239,68,68,0.4)] backdrop-blur-md transition hover:scale-105 active:scale-95"
+                >
+                  Сбросить фильтр
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
 
         <div className="pointer-events-auto mx-auto mb-24 flex w-full max-w-md flex-col items-center space-y-3 sm:mb-28">
-          <div className="w-full rounded-3xl border border-slate-700/50 bg-slate-900/80 p-4 text-center shadow-2xl backdrop-blur-md sm:p-5">
-            <p className="mb-1.5 text-[10px] font-black uppercase tracking-widest text-red-400 sm:text-xs">
-              {featured.story} (21:00)
-            </p>
-            <h3 className="mb-2 text-base font-black text-white sm:text-lg">{featured.title}</h3>
-
-            <div className="mb-1 flex justify-between text-xs font-bold uppercase tracking-wider text-slate-400">
-              <span>Собрано: {usd.format(featured.raisedUsd)}</span>
-              <span>Цель: {usd.format(featured.goalUsd)}</span>
-            </div>
-
-            <div className="mb-2 h-3 w-full overflow-hidden rounded-full border border-slate-700 bg-slate-800">
-              <div
-                className="relative h-3 overflow-hidden rounded-full bg-gradient-to-r from-blue-600 via-[#3B82F6] to-blue-400 shadow-[0_0_14px_rgba(59,130,246,0.85)] animate-pulse transition-all duration-300"
-                style={{ width: `${featuredProgress}%` }}
+          {visibleProjects.length === 0 ? (
+            <div className="w-full rounded-3xl border border-blue-400/35 bg-slate-900/80 p-4 text-center shadow-2xl backdrop-blur-md sm:p-5">
+              <p className="text-[10px] font-black uppercase tracking-widest text-blue-300">
+                Поиск и фильтры
+              </p>
+              <h3 className="mt-2 text-base font-black text-white sm:text-lg">
+                Миссии не найдены
+              </h3>
+              <button
+                type="button"
+                onClick={resetDiscoveryFilters}
+                className="mt-4 w-full rounded-3xl border border-red-400/60 bg-gradient-to-r from-red-950/50 via-red-600/45 to-red-950/50 py-3 text-xs font-black uppercase tracking-widest text-white shadow-[inset_0_0_16px_rgba(255,255,255,0.16),0_0_24px_rgba(239,68,68,0.55)] backdrop-blur-md transition hover:scale-[1.02] active:scale-95"
               >
-                <div className="absolute inset-0 animate-pulse bg-white/20" />
-              </div>
+                Сбросить фильтр
+              </button>
             </div>
-            <p className="text-xs font-bold uppercase tracking-widest text-blue-400">
-              Осталось: {featured.hoursLeft} час {featured.minutesLeft} минут
-            </p>
-          </div>
+          ) : (
+            <>
+              <div className="w-full rounded-3xl border border-slate-700/50 bg-slate-900/80 p-4 text-center shadow-2xl backdrop-blur-md sm:p-5">
+                <p className="mb-1.5 text-[10px] font-black uppercase tracking-widest text-red-400 sm:text-xs">
+                  {featured.story} (21:00)
+                </p>
+                <h3 className="mb-2 text-base font-black text-white sm:text-lg">{featured.title}</h3>
 
-          <button
-            type="button"
-            onClick={openFeed}
-            className="flex w-full transform items-center justify-center gap-2 rounded-3xl border border-red-400/60 bg-gradient-to-r from-red-950/50 via-red-600/45 to-red-950/50 py-4 text-xl font-black text-white shadow-[inset_0_0_20px_rgba(255,255,255,0.18),inset_0_0_36px_rgba(239,68,68,0.35),0_0_34px_rgba(239,68,68,0.75)] backdrop-blur-md transition-all hover:scale-[1.02] active:scale-95 sm:py-5 sm:text-2xl"
-          >
-            {isAuthenticated ? 'Открыть ленту' : 'Войти и помочь'}
-          </button>
+                <div className="mb-1 flex justify-between text-xs font-bold uppercase tracking-wider text-slate-400">
+                  <span>Собрано: {usd.format(featured.raisedUsd)}</span>
+                  <span>Цель: {usd.format(featured.goalUsd)}</span>
+                </div>
+
+                <div className="mb-2 h-3 w-full overflow-hidden rounded-full border border-slate-700 bg-slate-800">
+                  <div
+                    className="relative h-3 overflow-hidden rounded-full bg-gradient-to-r from-blue-600 via-[#3B82F6] to-blue-400 shadow-[0_0_14px_rgba(59,130,246,0.85)] animate-pulse transition-all duration-300"
+                    style={{ width: `${featuredProgress}%` }}
+                  >
+                    <div className="absolute inset-0 animate-pulse bg-white/20" />
+                  </div>
+                </div>
+                <p className="text-xs font-bold uppercase tracking-widest text-blue-400">
+                  Осталось: {featured.hoursLeft} час {featured.minutesLeft} минут
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={openFeed}
+                className="flex w-full transform items-center justify-center gap-2 rounded-3xl border border-red-400/60 bg-gradient-to-r from-red-950/50 via-red-600/45 to-red-950/50 py-4 text-xl font-black text-white shadow-[inset_0_0_20px_rgba(255,255,255,0.18),inset_0_0_36px_rgba(239,68,68,0.35),0_0_34px_rgba(239,68,68,0.75)] backdrop-blur-md transition-all hover:scale-[1.02] active:scale-95 sm:py-5 sm:text-2xl"
+              >
+                {isAuthenticated ? 'Открыть ленту' : 'Войти и помочь'}
+              </button>
+            </>
+          )}
 
           <div className="flex w-full justify-between px-2 text-[10px] font-bold uppercase tracking-widest text-slate-400">
             <span>Баланс: {usd.format(balanceUsd)}</span>
@@ -485,10 +562,15 @@ function App() {
       {showFeed && isAuthenticated ? (
         <SwipeFeed
           key={feedSessionKey}
-          projects={projects}
+          projects={visibleProjects}
           balanceUsd={balanceUsd}
           savedIds={savedIds}
           initialIndex={feedInitialIndex}
+          searchQuery={searchQuery}
+          activeFilter={activeFilter}
+          onSearchChange={setSearchQuery}
+          onFilterChange={setActiveFilter}
+          onResetFilters={resetDiscoveryFilters}
           onSkip={handleSkip}
           onSave={handleSave}
           onDonate={handleDonate}

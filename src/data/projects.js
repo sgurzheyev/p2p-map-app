@@ -99,3 +99,34 @@ export function findProjectIndex(projects, projectId) {
   const index = projects.findIndex((project) => project.id === projectId);
   return index >= 0 ? index : 0;
 }
+
+/**
+ * Фильтрация миссий по поисковой строке и активному тегу/категории.
+ * @param {Array} projects
+ * @param {{ query?: string, filter?: { type: 'tag' | 'category', value: string } | null }} options
+ */
+export function filterProjects(projects, { query = '', filter = null } = {}) {
+  const needle = query.trim().toLowerCase();
+
+  return projects.filter((project) => {
+    if (filter?.type === 'tag') {
+      if (!project.tags?.includes(filter.value)) return false;
+    }
+    if (filter?.type === 'category') {
+      if (project.story !== filter.value) return false;
+    }
+    if (!needle) return true;
+
+    const haystack = [
+      project.title,
+      project.location,
+      project.story,
+      project.description,
+      ...(project.tags ?? []),
+    ]
+      .join(' ')
+      .toLowerCase();
+
+    return haystack.includes(needle);
+  });
+}
