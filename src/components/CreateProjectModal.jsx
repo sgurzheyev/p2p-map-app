@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { getCategoryByLabel, MISSION_CATEGORIES } from '../data/categories';
+import { filterCities, findCityByName } from '../data/cities';
 
 const usd = new Intl.NumberFormat('en-US', {
   style: 'currency',
@@ -11,15 +12,6 @@ const TIERS = [
   { value: 'green', label: 'Аккредитованный фонд' },
   { value: 'yellow', label: 'Верифицирован по ID' },
   { value: 'gray', label: 'Базовая проверка' },
-];
-
-const CITY_PRESETS = [
-  { name: 'Москва', coordinates: [37.6173, 55.7558] },
-  { name: 'Санкт-Петербург', coordinates: [30.3141, 59.9386] },
-  { name: 'Тюмень', coordinates: [65.5343, 57.1522] },
-  { name: 'Иркутск', coordinates: [104.2806, 52.2978] },
-  { name: 'Казань', coordinates: [49.1221, 55.7887] },
-  { name: 'Новосибирск', coordinates: [82.9346, 55.0084] },
 ];
 
 const inputClass =
@@ -45,6 +37,109 @@ function Field({ label, children }) {
       </span>
       {children}
     </label>
+  );
+}
+
+function CityAutocomplete({ value, onChange, onSelectCity }) {
+  const [open, setOpen] = useState(false);
+  const [highlight, setHighlight] = useState(0);
+  const rootRef = useRef(null);
+
+  const suggestions = useMemo(() => filterCities(value), [value]);
+
+  useEffect(() => {
+    setHighlight(0);
+  }, [value]);
+
+  useEffect(() => {
+    const onPointerDown = (event) => {
+      if (!rootRef.current?.contains(event.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    return () => document.removeEventListener('pointerdown', onPointerDown);
+  }, []);
+
+  const pickCity = (city) => {
+    onSelectCity(city);
+    setOpen(false);
+  };
+
+  const handleKeyDown = (event) => {
+    if (!open && (event.key === 'ArrowDown' || event.key === 'Enter')) {
+      setOpen(true);
+      return;
+    }
+    if (!open || suggestions.length === 0) return;
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setHighlight((index) => (index + 1) % suggestions.length);
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setHighlight((index) => (index - 1 + suggestions.length) % suggestions.length);
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      pickCity(suggestions[highlight]);
+    } else if (event.key === 'Escape') {
+      setOpen(false);
+    }
+  };
+
+  return (
+    <div ref={rootRef} className="relative">
+      <input
+        value={value}
+        onChange={(event) => {
+          onChange(event.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+        onKeyDown={handleKeyDown}
+        placeholder="Начните вводить город…"
+        autoComplete="off"
+        className={inputClass}
+        aria-autocomplete="list"
+        aria-expanded={open}
+      />
+
+      {/* In-flow list: stays inside modal scroll area, avoids clipping bottom nav */}
+      {open ? (
+        <div className="mt-2 max-h-40 overflow-y-auto rounded-2xl border border-blue-400/35 bg-slate-950/90 shadow-[0_0_24px_rgba(59,130,246,0.28)] backdrop-blur-md">
+          {suggestions.length === 0 ? (
+            <p className="px-4 py-3 text-xs text-slate-400">
+              Город не найден — можно оставить свой вариант и задать координаты вручную.
+            </p>
+          ) : (
+            <ul>
+              {suggestions.map((city, index) => {
+                const active = index === highlight;
+                return (
+                  <li key={`${city.name}-${city.country}`}>
+                    <button
+                      type="button"
+                      onMouseEnter={() => setHighlight(index)}
+                      onClick={() => pickCity(city)}
+                      className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left transition ${
+                        active
+                          ? 'bg-blue-600/25 text-white'
+                          : 'text-slate-200 hover:bg-blue-600/15'
+                      }`}
+                    >
+                      <span className="truncate text-sm font-bold">{city.name}</span>
+                      <span className="shrink-0 text-[10px] uppercase tracking-wider text-blue-300/90">
+                        {city.country}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -78,12 +173,20 @@ export default function CreateProjectModal({ onSubmit, onClose }) {
     return Number.isFinite(value) && value > 0 ? usd.format(value) : '—';
   }, [goalUsd]);
 
-  const applyCity = (cityName) => {
-    setLocation(cityName);
-    const preset = CITY_PRESETS.find((city) => city.name === cityName);
-    if (!preset) return;
-    setLng(String(preset.coordinates[0]));
-    setLat(String(preset.coordinates[1]));
+  const selectCity = (city) => {
+    setLocation(city.name);
+    setLng(String(city.coordinates[0]));
+    setLat(String(city.coordinates[1]));
+    setError('');
+  };
+
+  const handleLocationChange = (nextValue) => {
+    setLocation(nextValue);
+    const match = findCityByName(nextValue);
+    if (match) {
+      setLng(String(match.coordinates[0]));
+      setLat(String(match.coordinates[1]));
+    }
   };
 
   const handleCategoryChange = (nextCategory) => {
@@ -192,28 +295,19 @@ export default function CreateProjectModal({ onSubmit, onClose }) {
               />
             </Field>
 
-            <Field label="Регион / город">
-              <select
-                value={CITY_PRESETS.some((city) => city.name === location) ? location : ''}
-                onChange={(e) => applyCity(e.target.value)}
-                className={`${inputClass} mb-2`}
-              >
-                <option value="" disabled>
-                  Выберите город (симуляция пина)
-                </option>
-                {CITY_PRESETS.map((city) => (
-                  <option key={city.name} value={city.name}>
-                    {city.name}
-                  </option>
-                ))}
-              </select>
-              <input
+            <div>
+              <span className="mb-1.5 block text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                Регион / город
+              </span>
+              <CityAutocomplete
                 value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder="Или введите свой регион"
-                className={inputClass}
+                onChange={handleLocationChange}
+                onSelectCity={selectCity}
               />
-            </Field>
+              <p className="mt-1.5 text-[10px] text-slate-500">
+                Выберите из списка или введите свой город и координаты вручную.
+              </p>
+            </div>
 
             <div className="grid grid-cols-2 gap-2">
               <Field label="Долгота">
